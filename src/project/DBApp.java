@@ -231,7 +231,7 @@ public class DBApp
 		}
 		try
 		{
-			FileWriter fw = new FileWriter("src/DB2App/metaData.txt", true);
+			FileWriter fw = new FileWriter("src/DB2App/metaData.csv", true);
 			BufferedWriter bw = new BufferedWriter(fw);
 
 			PrintWriter out = new PrintWriter(bw);
