@@ -49,13 +49,13 @@ public class DBApp
 		htblColNameValue.clear();
 		htblColNameValue.put("id", new Integer(5674));
 		htblColNameValue.put("name", new String("Fady"));
-		htblColNameValue.put("gpa", new Double(1.0));
+		htblColNameValue.put("gpa", new Double(0.7));
 		ourApp.insertIntoTable(strTableName, htblColNameValue);
 
 		htblColNameValue.clear();
 		htblColNameValue.put("id", new Integer(8475));
 		htblColNameValue.put("name", new String("Zeyad"));
-		htblColNameValue.put("gpa", new Double(0.99));
+		htblColNameValue.put("gpa", new Double(0.69));
 		ourApp.insertIntoTable(strTableName, htblColNameValue);
 
 		htblColNameValue.clear();
