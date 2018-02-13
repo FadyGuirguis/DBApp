@@ -1,0 +1,8 @@
+Student, gpa, java.lang.Double, False, False 
+Student, name, java.lang.String, False, False 
+Student, id, java.lang.Integer, True, False 
+
+Employee, name, java.lang.String, False, False 
+Employee, salary, java.lang.Double, False, False 
+Employee, id, java.lang.Integer, True, False 
+
