@@ -27,13 +27,13 @@ public class DBApp
 		File AppDirectory = new File("src/DB2App");
 		AppDirectory.mkdir();
 
-		File metaData = new File("src/DB2App/metaData.txt");
+		File metaData = new File("src/DB2App/metaData.csv");
 		try
 		{
 			metaData.createNewFile();
 			String header = "Table Name, Column Name, Column Type, Key, Indexed";
 			header += System.lineSeparator();
-			PrintWriter out = new PrintWriter("src/DB2App/metaData.txt");
+			PrintWriter out = new PrintWriter("src/DB2App/metaData.csv");
 			out.println(header);
 			out.close();
 		} catch (IOException e)
