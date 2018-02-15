@@ -4,9 +4,13 @@ import java.io.IOException;
 
 public class Page
 {
+	//id of the page: each page in a given table is given a unique id used for naming the files in the table folder
 	private int ID = 0;
+	//number of tuples inserted in the page, used to know whether the page is full or not yet
 	private int numOfTuples;
+	//each page has a reference to the next page after it
 	private Page nextPage;
+	//the name of the table whose data are stored in this page, used to locate the table's folder to make a new page in it
 	private String ownerTable;
 
 	public Page(String ownerTable, int ID)
@@ -18,7 +22,7 @@ public class Page
 
 		try
 		{
-
+			//creating the actual page in the table's directory
 			FileWriter fw = new FileWriter("src/DB2App/" + ownerTable + " Table/Page " + ID + ".ser", true);
 
 		} catch (IOException i)
@@ -27,6 +31,7 @@ public class Page
 		}
 	}
 
+	//getters and setters
 	public int getID()
 	{
 		return ID;
