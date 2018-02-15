@@ -4,6 +4,7 @@ import java.util.Hashtable;
 import java.util.LinkedList;
 import java.lang.Integer;
 import java.lang.String;
+import java.time.LocalDateTime;
 import java.lang.Double;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -62,6 +63,10 @@ public class DBApp
 		String dirName = strTableName + " Table";
 		File newDir = new File("src/DB2App/" + dirName);
 		newDir.mkdir();
+		
+		// adding Touch date column
+		htblColNameType.put("TouchDate", "java.lang.LocalDateTime");
+
 
 		// create table object
 		Table t = new Table(strTableName, strClusteringKeyColumn, htblColNameType);
@@ -81,6 +86,8 @@ public class DBApp
 	//eg. for <Key,Value> : <"id",375>
 	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue)
 	{
+		//Adding DateTime at the time of inserting the tuple
+		htblColNameValue.put("TouchDate", LocalDateTime.now());
 		//******** initialize the tuple with the information:
 
 		/*check http://www.java2s.com/Tutorial/Java/0140__Collections/FetchingKeysandValuesthegetmethod.htm
@@ -169,23 +176,22 @@ public class DBApp
 			fileOut.close();
 
 			//uncomment that to see the tuple's data deserialized
-			//don't forget to uncomment the catch part as well, line 185
-			/*
-			 * FileInputStream fileIn = new FileInputStream("src/DB2App/" +
-			 * strTableName + " Table/Page " + pageID + ".ser");
-			 * ObjectInputStream in = new ObjectInputStream(fileIn); Tuple tn =
-			 * (Tuple)(in.readObject()); 
-			 * System.out.println(tn.toString());
+			//don't forget to uncomment the catch part as well, line 193
+			
+/*			 FileInputStream fileIn = new FileInputStream("src/DB2App/" +
+			 strTableName + " Table/Page " + pageID + ".ser");
+			 ObjectInputStream in = new ObjectInputStream(fileIn); Tuple tn = (Tuple)(in.readObject()); 
+			 System.out.println(tn.toString());
 			 */
 
 		} catch (IOException i)
 		{
 			i.printStackTrace();
-		}
-		/*
-			 * catch (ClassNotFoundException e) {
-			 *  e.printStackTrace(); }
-			 */
+		} 
+		/*catch (ClassNotFoundException e) {
+			e.printStackTrace(); 
+		}*/
+			 
 
 	}
 
