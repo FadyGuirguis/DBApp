@@ -65,7 +65,7 @@ public class DBApp
 		newDir.mkdir();
 		
 		// adding Touch date column
-		htblColNameType.put("TouchDate", "java.lang.LocalDateTime");
+		htblColNameType.put("TouchDate", "java.time.LocalDateTime");
 
 
 		// create table object
