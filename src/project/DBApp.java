@@ -58,6 +58,8 @@ public class DBApp
 	public void createTable(String strTableName, String strClusteringKeyColumn,
 			Hashtable<String, String> htblColNameType)
 	{
+		//check for table creation exceptions
+		checkTableCreationException(strTableName, htblColNameType);
 
 		// making a directory for the table
 		String dirName = strTableName + " Table";
@@ -88,6 +90,10 @@ public class DBApp
 	{
 		//Adding DateTime at the time of inserting the tuple
 		htblColNameValue.put("TouchDate", LocalDateTime.now());
+		
+		//Check for exceptions
+		checkDataInsertionExceptions(strTableName, htblColNameValue);
+		
 		//******** initialize the tuple with the information:
 
 		/*check http://www.java2s.com/Tutorial/Java/0140__Collections/FetchingKeysandValuesthegetmethod.htm
@@ -251,5 +257,17 @@ public class DBApp
 			System.out.println("Metadata File Not Found!");
 		}
 	}
+	
+	public void checkDataInsertionExceptions(String strTableName, Hashtable<String, Object> htblColNameValue)
+	{
+		
+	}
+	
+	public void checkTableCreationException(String strTableName, Hashtable<String, String> htblColNameType)
+	{
+		
+	}
+	
+	
 
 }
