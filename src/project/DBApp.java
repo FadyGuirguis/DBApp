@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
 
 import exceptions.DBAppException;
+import exceptions.DBInCorrectEntriesNumber;
 import exceptions.DBNameInUse;
 import exceptions.DBUnsupportedType;
 
@@ -97,13 +98,15 @@ public class DBApp
 
 	//htblColNameType is a hashtable with key: column name (String), and value: column value (Object)
 	//eg. for <Key,Value> : <"id",375>
-	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue)
+	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException
 	{
-		//Adding DateTime at the time of inserting the tuple
-		htblColNameValue.put("TouchDate", LocalDateTime.now());
+		
 		
 		//Check for exceptions
 		checkDataInsertionExceptions(strTableName, htblColNameValue);
+		
+		//Adding DateTime at the time of inserting the tuple
+		htblColNameValue.put("TouchDate", LocalDateTime.now());
 		
 		//******** initialize the tuple with the information:
 
@@ -132,7 +135,7 @@ public class DBApp
 
 		//********* writing the tuple to a page::
 		//we need to locate the right page that we should write the tuple to
-		//that is (for now), the last page in the table that has space
+		//that is (for now), the last p age in the table that has space
 		//if it doesn't have space, we shift
 		//*********** NOW THAT NEEDS TO CHANGE, WE NEED TO FIND THE RIGHT PAGE SO THAT THE DATA IS SORTED =D
 		
@@ -195,19 +198,19 @@ public class DBApp
 			//uncomment that to see the tuple's data deserialized
 			//don't forget to uncomment the catch part as well, line 193
 			
-/*			 FileInputStream fileIn = new FileInputStream("src/DB2App/" +
+			 FileInputStream fileIn = new FileInputStream("src/DB2App/" +
 			 strTableName + " Table/Page " + pageID + ".ser");
 			 ObjectInputStream in = new ObjectInputStream(fileIn); Tuple tn = (Tuple)(in.readObject()); 
 			 System.out.println(tn.toString());
-			 */
+			 
 
 		} catch (IOException i)
 		{
 			i.printStackTrace();
 		} 
-		/*catch (ClassNotFoundException e) {
+		catch (ClassNotFoundException e) {
 			e.printStackTrace(); 
-		}*/
+		}
 			 
 
 	}
@@ -269,8 +272,49 @@ public class DBApp
 		}
 	}
 	
-	public void checkDataInsertionExceptions(String strTableName, Hashtable<String, Object> htblColNameValue)
+	public void checkDataInsertionExceptions(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException
 	{
+		/*
+		 * Incorrect Entries number DONE
+		 * primary key not unique
+		 * primary key null
+		 * type mismatch
+		 */
+		try {
+			BufferedReader br = new BufferedReader(new FileReader("src/DB2App/metaData.csv"));
+			String line = br.readLine();
+			int args = 0;
+			String key = null;
+			Hashtable<String, String> meta = new Hashtable<String, String>();
+
+			while (line != null)
+			{
+				String[] content = line.split(", ");
+				if (strTableName.equals(content[0]))
+				{
+					if (!(content[1].equals("TouchDate")))
+					{
+						args++;
+						meta.put(content[1], content[2]);
+					}
+					if (content[3].equals("True"))
+						key = content[1];
+				}
+				line = br.readLine();
+			}
+			System.out.println(args);
+			System.out.println(htblColNameValue.size());
+			System.out.println(key);
+			if (htblColNameValue.size() != args)
+			{
+				throw new DBInCorrectEntriesNumber(args);
+			}
+			
+		} catch (IOException e) {
+			System.out.println("Metadata File Not Found!");
+		}
+		
+		
 		
 	}
 	
@@ -283,7 +327,7 @@ public class DBApp
 			String line = br.readLine();
 			while (line != null)
 			{
-				String[] content = line.split(",");
+				String[] content = line.split(", ");
 				if (content[0] != null
 						&& strTableName.equals(content[0]))
 				{
