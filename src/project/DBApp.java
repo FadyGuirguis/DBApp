@@ -3,7 +3,11 @@ package project;
 import java.util.Hashtable;
 import java.util.LinkedList;
 
+import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
+
+import exceptions.DBAppException;
 import exceptions.DBNameInUse;
+import exceptions.DBUnsupportedType;
 
 import java.lang.Integer;
 import java.lang.String;
@@ -20,6 +24,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 
 public class DBApp
@@ -61,7 +67,7 @@ public class DBApp
 	//htblColNameType is a hashtable with key: column name (String), and value: column type (String)
 	//eg. for <Key,Value> : <"id","java.lang.Integer">
 	public void createTable(String strTableName, String strClusteringKeyColumn,
-			Hashtable<String, String> htblColNameType) throws DBNameInUse
+			Hashtable<String, String> htblColNameType) throws DBAppException
 	{
 		//check for table creation exceptions
 		checkTableCreationException(strTableName, htblColNameType);
@@ -268,11 +274,10 @@ public class DBApp
 		
 	}
 	
-	public void checkTableCreationException(String strTableName, Hashtable<String, String> htblColNameType) throws DBNameInUse 
+	public void checkTableCreationException(String strTableName, Hashtable<String, String> htblColNameType) throws DBAppException 
 	{
-		
 
-		
+		//checking that the metadata file doesnnot contain anothertable with the same name
 		try {
 			BufferedReader br = new BufferedReader(new FileReader("src/DB2App/metaData.csv"));
 			String line = br.readLine();
@@ -294,6 +299,25 @@ public class DBApp
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		//checking that all the column types are supported by our app
+		String[] valid = {"java.lang.Integer", "java.lang.String", "java.lang.Double", "java.lang.Boolean", "java.util.Date"};
+		Enumeration<String> types = htblColNameType.elements();
+		while (types.hasMoreElements())
+		{
+			String type = types.nextElement();
+			for (int i = 0; i < valid.length; i++)
+			{
+				if (type.equals(valid[i]))
+					break;
+				if (i == 4)
+					throw new DBUnsupportedType(type);
+			}
+
+			
+			
+		}
+
 	}
 	
 	

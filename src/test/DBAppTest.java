@@ -26,13 +26,13 @@ public class DBAppTest {
 			htblColNameType.put("gpa", "java.lang.Double");
 			ourApp.createTable(strTableName, "id", htblColNameType);
 			
-			
 			String strTableName2 = "Employee";
 			htblColNameType.clear();
 			htblColNameType.put("id", "java.lang.Integer");
 			htblColNameType.put("name", "java.lang.String");
 			htblColNameType.put("salary", "java.lang.Double");
 			ourApp.createTable(strTableName2, "id", htblColNameType);
+			
 		} catch (DBAppException e) {
 			// TODO Auto-generated catch block
 			System.out.println(e.getMessage());
