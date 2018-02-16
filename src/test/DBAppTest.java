@@ -2,6 +2,8 @@ package test;
 
 import java.util.Hashtable;
 
+import exceptions.DBAppException;
+import exceptions.DBNameInUse;
 import project.DBApp;
 
 public class DBAppTest {
@@ -14,19 +16,32 @@ public class DBAppTest {
 
 		//creating tables
 		//I'm using the same hashtable table htblColNameType so make sure u clear it before creating every table
-		String strTableName = "Student";
-		Hashtable<String, String> htblColNameType = new Hashtable<String, String>();
-		htblColNameType.put("id", "java.lang.Integer");
-		htblColNameType.put("name", "java.lang.String");
-		htblColNameType.put("gpa", "java.lang.Double");
-		ourApp.createTable(strTableName, "id", htblColNameType);
+		String strTableName = null;
 
-		String strTableName2 = "Employee";
-		htblColNameType.clear();
-		htblColNameType.put("id", "java.lang.Integer");
-		htblColNameType.put("name", "java.lang.String");
-		htblColNameType.put("salary", "java.lang.Double");
-		ourApp.createTable(strTableName2, "id", htblColNameType);
+		try {
+			strTableName = "Student";
+			Hashtable<String, String> htblColNameType = new Hashtable<String, String>();
+			htblColNameType.put("id", "java.lang.Integer");
+			htblColNameType.put("name", "java.lang.String");
+			htblColNameType.put("gpa", "java.lang.Double");
+			ourApp.createTable(strTableName, "id", htblColNameType);
+			
+			
+			String strTableName2 = "Employee";
+			htblColNameType.clear();
+			htblColNameType.put("id", "java.lang.Integer");
+			htblColNameType.put("name", "java.lang.String");
+			htblColNameType.put("salary", "java.lang.Double");
+			ourApp.createTable(strTableName2, "id", htblColNameType);
+		} catch (DBAppException e) {
+			// TODO Auto-generated catch block
+			System.out.println(e.getMessage());
+		}
+		
+		
+
+
+		
 		
 		//inserting some tuples 
 		//I'm using the same hashtable table htblColNameValue so make sure u clear it before inserting each time

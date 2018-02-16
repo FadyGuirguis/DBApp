@@ -2,14 +2,19 @@ package project;
 
 import java.util.Hashtable;
 import java.util.LinkedList;
+
+import exceptions.DBNameInUse;
+
 import java.lang.Integer;
 import java.lang.String;
 import java.time.LocalDateTime;
 import java.lang.Double;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -56,7 +61,7 @@ public class DBApp
 	//htblColNameType is a hashtable with key: column name (String), and value: column type (String)
 	//eg. for <Key,Value> : <"id","java.lang.Integer">
 	public void createTable(String strTableName, String strClusteringKeyColumn,
-			Hashtable<String, String> htblColNameType)
+			Hashtable<String, String> htblColNameType) throws DBNameInUse
 	{
 		//check for table creation exceptions
 		checkTableCreationException(strTableName, htblColNameType);
@@ -263,9 +268,32 @@ public class DBApp
 		
 	}
 	
-	public void checkTableCreationException(String strTableName, Hashtable<String, String> htblColNameType)
+	public void checkTableCreationException(String strTableName, Hashtable<String, String> htblColNameType) throws DBNameInUse 
 	{
 		
+
+		
+		try {
+			BufferedReader br = new BufferedReader(new FileReader("src/DB2App/metaData.csv"));
+			String line = br.readLine();
+			while (line != null)
+			{
+				String[] content = line.split(",");
+				if (content[0] != null
+						&& strTableName.equals(content[0]))
+				{
+					throw new DBNameInUse(strTableName);
+				}
+				line = br.readLine();
+			}
+			br.close();
+			
+			
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	
