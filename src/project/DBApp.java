@@ -1,6 +1,7 @@
 package project;
 
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedList;
 
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
@@ -8,6 +9,8 @@ import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
 import exceptions.DBAppException;
 import exceptions.DBInCorrectEntriesNumber;
 import exceptions.DBNameInUse;
+import exceptions.DBPrimaryKeyNull;
+import exceptions.DBTypeMismatch;
 import exceptions.DBUnsupportedType;
 
 import java.lang.Integer;
@@ -27,6 +30,7 @@ import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Enumeration;
 
 public class DBApp
@@ -277,8 +281,8 @@ public class DBApp
 		/*
 		 * Incorrect Entries number DONE
 		 * primary key not unique
-		 * primary key null
-		 * type mismatch
+		 * primary key null Done
+		 * type mismatch Done
 		 */
 		try {
 			BufferedReader br = new BufferedReader(new FileReader("src/DB2App/metaData.csv"));
@@ -302,13 +306,35 @@ public class DBApp
 				}
 				line = br.readLine();
 			}
-			System.out.println(args);
-			System.out.println(htblColNameValue.size());
-			System.out.println(key);
+			System.out.println(meta.toString());
+			System.out.println(htblColNameValue.toString());
 			if (htblColNameValue.size() != args)
 			{
 				throw new DBInCorrectEntriesNumber(args);
 			}
+			Enumeration<String> types = meta.elements();
+			Enumeration<String> colNames = htblColNameValue.keys();
+			Iterator<Object> colValues = htblColNameValue.values().iterator();			
+			while (types.hasMoreElements())
+			{
+				String type = types.nextElement();
+				String name = colNames.nextElement();
+				Object value = colValues.next();
+				
+				if (name.equals(key)
+						&& value == null)
+					throw new DBPrimaryKeyNull(name);
+
+				if (!(value.getClass().toString().substring(6)).equals(type))
+				{
+					throw new DBTypeMismatch(type, name);
+				}
+
+
+			}
+
+
+
 			
 		} catch (IOException e) {
 			System.out.println("Metadata File Not Found!");

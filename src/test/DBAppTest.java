@@ -66,7 +66,7 @@ public class DBAppTest {
 			htblColNameValue.clear();
 			htblColNameValue.put("id", new Integer(12464));
 			htblColNameValue.put("name", new String("Rony"));
-			//htblColNameValue.put("gpa", new Double(0.95));
+			htblColNameValue.put("gpa", new Double(0.95));
 			ourApp.insertIntoTable(strTableName, htblColNameValue);
 			
 		} catch (DBAppException e) {

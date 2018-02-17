@@ -2,8 +2,8 @@ package exceptions;
 
 public class DBPrimaryKeyNull extends DBAppException {
 
-	public DBPrimaryKeyNull() {
-		super("The primary key cannot be null");
+	public DBPrimaryKeyNull(String key) {
+		super(key + " is the primary key and cannot be null");
 	}
 
 }
