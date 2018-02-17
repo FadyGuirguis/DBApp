@@ -1,10 +1,18 @@
 package test;
 
+import java.awt.List;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.Hashtable;
 
 import exceptions.DBAppException;
 import exceptions.DBNameInUse;
 import project.DBApp;
+import project.Tuple;
 
 public class DBAppTest {
 	
@@ -75,10 +83,35 @@ public class DBAppTest {
 			System.out.println(e.getMessage());
 		}
 		
-		
+	    ArrayList<Object> results = new ArrayList<Object>();
 
+		try {
 
-		
+			 FileInputStream fileIn = new FileInputStream("src/DB2App/Student Table/Page 1.ser");
+			 ObjectInputStream in = new ObjectInputStream(fileIn);
+			
+			Object tn;
+			while ((tn = (in.readObject())) != null)
+			{
+				results.add(tn);
+				System.out.println(((Tuple) tn).toString());
+
+			}
+			
+			
+			
+			
+			 in.close();
+			 
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		catch (ClassNotFoundException e) {
+		e.printStackTrace(); 
+		}
+			
+	
 		
 		//inserting some tuples 
 		//I'm using the same hashtable table htblColNameValue so make sure u clear it before inserting each time
