@@ -3,20 +3,14 @@ package project;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
-
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
-
 import exceptions.DBAppException;
 import exceptions.DBInCorrectEntriesNumber;
 import exceptions.DBNameInUse;
 import exceptions.DBPrimaryKeyNull;
 import exceptions.DBTypeMismatch;
 import exceptions.DBUnsupportedType;
-
-import java.lang.Integer;
 import java.lang.String;
 import java.time.LocalDateTime;
-import java.lang.Double;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -28,9 +22,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Enumeration;
 
 public class DBApp
@@ -99,6 +90,61 @@ public class DBApp
 		addMetaData(strTableName, strClusteringKeyColumn, htblColNameType);
 
 	}
+	
+	public void insertSorted(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException
+	{
+		//Check for exceptions
+		int index = checkDataInsertionExceptions(strTableName, htblColNameValue);
+				
+		//Adding DateTime at the time of inserting the tuple
+		htblColNameValue.put("TouchDate", LocalDateTime.now());
+				
+		//******** initialize the tuple with the information:
+
+		/*check http://www.java2s.com/Tutorial/Java/0140__Collections/FetchingKeysandValuesthegetmethod.htm
+		  for the use of enumeration */
+			
+		//getting the column values
+		Enumeration<Object> colValues = htblColNameValue.elements();
+
+		//an empty linked list to store in it the tuple's data
+		LinkedList<Object> l = new LinkedList<Object>();
+		
+		//extracting the column names and values, and adding the values to the linked list
+		while (colValues.hasMoreElements())
+		{
+			//String curName = colNames.nextElement();
+			Object curValue = colValues.nextElement();
+
+			l.addFirst(curValue);
+		}
+		System.out.println(index);
+		System.out.println(l.toString());
+		
+		//a linked list of the pages that hold the table's data
+		LinkedList<Page> pagesOfTable = null;
+		//the last page in the pages that holds the table's data
+		Page lastPage = null;
+
+		//looping on all our app's tables to find the table with the table name passed to the method
+		//ie the table that the user wants to insert in
+		for (int i = 0; i < tablesInApp.size(); i++)
+		{
+			Table table = tablesInApp.get(i);
+			String tableName = table.getStrTableName();
+			
+			//if that's the table we're looking for
+			if (tableName.equals(strTableName))
+			{
+				//getting the number of pages to perform binary search
+				pagesOfTable = table.getPages();
+				int numPages = pagesOfTable.size();
+				
+			}
+		}		 
+				
+
+	}
 
 	//htblColNameType is a hashtable with key: column name (String), and value: column value (Object)
 	//eg. for <Key,Value> : <"id",375>
@@ -107,7 +153,7 @@ public class DBApp
 		
 		
 		//Check for exceptions
-		checkDataInsertionExceptions(strTableName, htblColNameValue);
+		int index = checkDataInsertionExceptions(strTableName, htblColNameValue);
 		
 		//Adding DateTime at the time of inserting the tuple
 		htblColNameValue.put("TouchDate", LocalDateTime.now());
@@ -126,14 +172,13 @@ public class DBApp
 		LinkedList<Object> l = new LinkedList<Object>();
 
 		//extracting the column names and values, and adding the values to the linked list
-		while (colNames.hasMoreElements())
+		while (colValues.hasMoreElements())
 		{
-			String curName = colNames.nextElement();
+			//String curName = colNames.nextElement();
 			Object curValue = colValues.nextElement();
 
 			l.addFirst(curValue);
 		}
-		
 		//creating a tuple object with a linked list of the tuple's data
 		Tuple t = new Tuple(l);
 
@@ -202,19 +247,19 @@ public class DBApp
 			//uncomment that to see the tuple's data deserialized
 			//don't forget to uncomment the catch part as well, line 193
 			
-			 FileInputStream fileIn = new FileInputStream("src/DB2App/" +
-			 strTableName + " Table/Page " + pageID + ".ser");
-			 ObjectInputStream in = new ObjectInputStream(fileIn); Tuple tn = (Tuple)(in.readObject()); 
-			 System.out.println(tn.toString());
-			 
+//			 FileInputStream fileIn = new FileInputStream("src/DB2App/" +
+//			 strTableName + " Table/Page " + pageID + ".ser");
+//			 ObjectInputStream in = new ObjectInputStream(fileIn); Tuple tn = (Tuple)(in.readObject()); 
+//			 System.out.println(tn.toString());
+//			 in.close();
 
 		} catch (IOException i)
 		{
 			i.printStackTrace();
 		} 
-		catch (ClassNotFoundException e) {
-			e.printStackTrace(); 
-		}
+//		catch (ClassNotFoundException e) {
+//			e.printStackTrace(); 
+//		}
 			 
 
 	}
@@ -276,7 +321,7 @@ public class DBApp
 		}
 	}
 	
-	public void checkDataInsertionExceptions(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException
+	public int checkDataInsertionExceptions(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException
 	{
 		/*
 		 * Incorrect Entries number DONE
@@ -284,10 +329,11 @@ public class DBApp
 		 * primary key null Done
 		 * type mismatch Done
 		 */
+		int keyIndex = 0;
+		int args = 0;
 		try {
 			BufferedReader br = new BufferedReader(new FileReader("src/DB2App/metaData.csv"));
 			String line = br.readLine();
-			int args = 0;
 			String key = null;
 			Hashtable<String, String> meta = new Hashtable<String, String>();
 
@@ -302,12 +348,16 @@ public class DBApp
 						meta.put(content[1], content[2]);
 					}
 					if (content[3].equals("True"))
+					{
 						key = content[1];
+						keyIndex = args;
+					}
 				}
 				line = br.readLine();
 			}
-			System.out.println(meta.toString());
-			System.out.println(htblColNameValue.toString());
+			br.close();
+			//System.out.println(meta.toString());
+			//System.out.println(htblColNameValue.toString());
 			if (htblColNameValue.size() != args)
 			{
 				throw new DBInCorrectEntriesNumber(args);
@@ -340,7 +390,7 @@ public class DBApp
 			System.out.println("Metadata File Not Found!");
 		}
 		
-		
+		return args - keyIndex;
 		
 	}
 	
@@ -362,7 +412,6 @@ public class DBApp
 				line = br.readLine();
 			}
 			br.close();
-			
 			
 			
 		} catch (IOException e) {

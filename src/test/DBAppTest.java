@@ -37,6 +37,7 @@ public class DBAppTest {
 			htblColNameValue.put("id", new Integer(4898));
 			htblColNameValue.put("name", new String("Peter"));
 			htblColNameValue.put("gpa", new Double(0.8));
+			
 			ourApp.insertIntoTable(strTableName, htblColNameValue);
 
 			htblColNameValue.clear();
