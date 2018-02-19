@@ -83,34 +83,34 @@ public class DBAppTest {
 			System.out.println(e.getMessage());
 		}
 		
-	    ArrayList<Object> results = new ArrayList<Object>();
-
-		try {
-
-			 FileInputStream fileIn = new FileInputStream("src/DB2App/Student Table/Page 1.ser");
-			 ObjectInputStream in = new ObjectInputStream(fileIn);
-			
-			Object tn;
-			while ((tn = (in.readObject())) != null)
-			{
-				results.add(tn);
-				System.out.println(((Tuple) tn).toString());
-
-			}
-			
-			
-			
-			
-			 in.close();
-			 
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
-		catch (ClassNotFoundException e) {
-		e.printStackTrace(); 
-		}
-			
+//	    ArrayList<Object> results = new ArrayList<Object>();
+//
+//		try {
+//
+//			 FileInputStream fileIn = new FileInputStream("src/DB2App/Student Table/Page 1.ser");
+//			 ObjectInputStream in = new ObjectInputStream(fileIn);
+//			
+//			Object tn;
+//			while ((tn = (in.readObject())) != null)
+//			{
+//				results.add(tn);
+//				System.out.println(((Tuple) tn).toString());
+//
+//			}
+//			
+//			
+//			
+//			
+//			 in.close();
+//			 
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} 
+//		catch (ClassNotFoundException e) {
+//		e.printStackTrace(); 
+//		}
+//			
 	
 		
 		//inserting some tuples 
