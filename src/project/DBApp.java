@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import exceptions.DBAppException;
 import exceptions.DBInCorrectEntriesNumber;
 import exceptions.DBNameInUse;
+import exceptions.DBPrimaryKeyNotUnique;
 import exceptions.DBPrimaryKeyNull;
 import exceptions.DBTableNotFound;
 import exceptions.DBTypeMismatch;
@@ -126,7 +127,7 @@ public class DBApp
 		return p;
 	}
 	
-	public void insertSorted(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException
+	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException
 	{
 		//Check for exceptions
 		int index = checkDataInsertionExceptions(strTableName, htblColNameValue);
@@ -178,7 +179,7 @@ public class DBApp
 				pagesOfTable = table.getPages();
 				int numPages = pagesOfTable.size();
 				int pageIndex = getPageNumber(strTableName, t, 1, numPages, index);
-				System.out.print("tuple will be inserted in " + pageIndex);
+				//System.out.print("tuple will be inserted in " + pageIndex);
 				
 				ArrayList<Tuple> pageContent = insertIntoPage(strTableName, pageIndex, t, index);
 				if (pageContent.size() > maxObjectsPerPage)
@@ -186,18 +187,18 @@ public class DBApp
 					
 					//renaming all following files
 					shift(strTableName, pageIndex, numPages);
-					for (int k = numPages; k >  pageIndex; k-=1)
-					{
-						System.out.println("k: " + k);
-						File oldfile = new File("src/DB2App/" + strTableName + " Table/Page " + k + ".ser");
-						File newfile = new File("src/DB2App/" + strTableName + " Table/Page " + (k+1) + ".ser");
-						if (newfile.exists())
-							System.out.println(newfile.getPath());
-						if(oldfile.renameTo(newfile))
-							System.out.println("success");
-						else
-							System.out.println("fail");
-					}
+//					for (int k = numPages; k >  pageIndex; k-=1)
+//					{
+//						System.out.println("k: " + k);
+//						File oldfile = new File("src/DB2App/" + strTableName + " Table/Page " + k + ".ser");
+//						File newfile = new File("src/DB2App/" + strTableName + " Table/Page " + (k+1) + ".ser");
+//						if (newfile.exists())
+//							System.out.println(newfile.getPath());
+//						if(oldfile.renameTo(newfile))
+//							System.out.println("success");
+//						else
+//							System.out.println("fail");
+//					}
 					Page p = new Page(tableName, numPages + 1);
 					table.getPages().add(p);
 					
@@ -216,8 +217,8 @@ public class DBApp
 
 						ObjectOutputStream out = new ObjectOutputStream(fileOut);
 
-						System.out.println(pageContent.toString());
-						System.out.println(newPageContent.toString());
+						//System.out.println(pageContent.toString());
+						//System.out.println(newPageContent.toString());
 						out.writeObject(pageContent);
 
 						
@@ -253,7 +254,7 @@ public class DBApp
 
 						ObjectOutputStream out = new ObjectOutputStream(fileOut);
 
-						System.out.println(pageContent.toString());
+						//System.out.println(pageContent.toString());
 						out.writeObject(pageContent);
 
 						out.close();
@@ -304,7 +305,7 @@ public class DBApp
 		}
 	}
 
-	private ArrayList<Tuple> insertIntoPage(String strTableName, int pageIndex, Tuple t, int clusteringKeyIndex) {
+	private ArrayList<Tuple> insertIntoPage(String strTableName, int pageIndex, Tuple t, int clusteringKeyIndex) throws DBPrimaryKeyNotUnique {
 		ObjectInputStream in;
 		ArrayList<Tuple> results = null;
 		try {
@@ -319,7 +320,7 @@ public class DBApp
 			e.printStackTrace();
 		}
 		
-		System.out.println("fetched results: " + results.toString());
+		//System.out.println("fetched results: " + results.toString());
 		int position = 0;
 		//System.out.println(t.getTupleInfo().get(clusteringKeyIndex).getClass().toString());
 		for (Tuple tuple: results)
@@ -332,6 +333,9 @@ public class DBApp
 					results.add(position, t);
 					return results;
 				}
+				else if ( ((String)(t.getTupleInfo().get(clusteringKeyIndex))) .compareTo  
+						((String)(tuple.getTupleInfo().get(clusteringKeyIndex))) == 0)
+					throw new DBPrimaryKeyNotUnique();
 			}
 			else if ((t.getTupleInfo().get(clusteringKeyIndex).getClass().toString().substring(6)).equals("java.lang.Integer"))
 			{
@@ -342,6 +346,9 @@ public class DBApp
 					results.add(position, t);
 					return results;
 				}
+				else if ( ((Integer)(t.getTupleInfo().get(clusteringKeyIndex))) .compareTo  
+						((Integer)(tuple.getTupleInfo().get(clusteringKeyIndex))) == 0)
+					throw new DBPrimaryKeyNotUnique();
 			}
 			else if ((t.getTupleInfo().get(clusteringKeyIndex).getClass().toString().substring(6)).equals("java.lang.Double"))
 			{
@@ -351,6 +358,9 @@ public class DBApp
 					results.add(position, t);
 					return results;
 				}
+				else if ( ((Double)(t.getTupleInfo().get(clusteringKeyIndex))) .compareTo  
+						((Double)(tuple.getTupleInfo().get(clusteringKeyIndex))) == 0)
+					throw new DBPrimaryKeyNotUnique();
 			}
 			else if ((t.getTupleInfo().get(clusteringKeyIndex).getClass().toString().substring(6)).equals("java.util.Date"))
 			{
@@ -360,18 +370,21 @@ public class DBApp
 					results.add(position, t);
 					return results;
 				}
+				else if ( ((Date)(t.getTupleInfo().get(clusteringKeyIndex))) .compareTo  
+						((Date)(tuple.getTupleInfo().get(clusteringKeyIndex))) == 0)
+					throw new DBPrimaryKeyNotUnique();
 			}
 			position++;
 		}
 		results.add(position, t);
-		System.out.println("Results: " + results.toString());
+		//System.out.println("Results: " + results.toString());
 		return results;
 		
 	}
 
 	private int getPageNumber(String strTableName, Tuple data, int start, int end, int clusteringKeyIndex)
 	{
-		System.out.println("start: " + start + "end: " + end);
+		//System.out.println("start: " + start + "end: " + end);
 		int index = (start + end)/2;
 		
 		if (start == end)
@@ -382,7 +395,7 @@ public class DBApp
 		ArrayList<Tuple> results = null;
 		try {
 			String pagePath = "src/DB2App/" + strTableName + " Table/Page " + index + ".ser";
-			System.out.println(index + "fady");
+			//System.out.println(index + "fady");
 			FileInputStream fileIn = new FileInputStream(pagePath);
 			in = new ObjectInputStream(fileIn);
 			results = (ArrayList<Tuple>)in.readObject();

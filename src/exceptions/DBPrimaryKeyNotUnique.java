@@ -2,7 +2,7 @@ package exceptions;
 
 public class DBPrimaryKeyNotUnique extends DBAppException {
 
-	public DBPrimaryKeyNotUnique(String message) {
+	public DBPrimaryKeyNotUnique() {
 		super("The primary key must be unique");
 	}
 
