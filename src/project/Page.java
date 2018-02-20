@@ -1,6 +1,9 @@
 package project;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 
 public class Page
 {
@@ -20,15 +23,7 @@ public class Page
 		this.nextPage = null;
 		this.ownerTable = ownerTable;
 
-		try
-		{
-			//creating the actual page in the table's directory
-			FileWriter fw = new FileWriter("src/DB2App/" + ownerTable + " Table/Page " + ID + ".ser", true);
-
-		} catch (IOException i)
-		{
-			System.out.println("Could Not Create a Page!");
-		}
+		
 	}
 
 	//getters and setters

@@ -25,6 +25,7 @@ import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.*;
 
 public class DBApp
 {
@@ -86,6 +87,25 @@ public class DBApp
 		tablesInApp.add(t);
 		
 		//add a new empty page to it, check the method in line 153
+		try
+		{
+			//creating the actual page in the table's directory
+			FileWriter fw = new FileWriter("src/DB2App/" + strTableName+ " Table/Page 1.ser", true);
+			FileOutputStream fileOut = new FileOutputStream(
+					"src/DB2App/" + strTableName+ " Table/Page 1.ser");
+
+			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+
+			
+			out.writeObject(new ArrayList<Tuple>());
+
+			out.close();
+			fileOut.close();
+
+		} catch (IOException i)
+		{
+			System.out.println("Could Not Create a Page!");
+		}
 		createPage(t);
 
 		// storing the table meta data, check line 161
@@ -93,123 +113,38 @@ public class DBApp
 
 	}
 	
-//	public void insertSorted(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException
-//	{
-//		//Check for exceptions
-//		int index = checkDataInsertionExceptions(strTableName, htblColNameValue);
-//				
-//		//Adding DateTime at the time of inserting the tuple
-//		htblColNameValue.put("TouchDate", LocalDateTime.now());
-//				
-//		//******** initialize the tuple with the information:
-//
-//		/*check http://www.java2s.com/Tutorial/Java/0140__Collections/FetchingKeysandValuesthegetmethod.htm
-//		  for the use of enumeration */
-//			
-//		//getting the column values
-//		Enumeration<Object> colValues = htblColNameValue.elements();
-//
-//		//an empty linked list to store in it the tuple's data
-//		LinkedList<Object> l = new LinkedList<Object>();
-//		
-//		//extracting the column names and values, and adding the values to the linked list
-//		while (colValues.hasMoreElements())
-//		{
-//			//String curName = colNames.nextElement();
-//			Object curValue = colValues.nextElement();
-//
-//			l.addFirst(curValue);
-//		}
-//		//creating a tuple object with a linked list of the tuple's data
-//		Tuple t = new Tuple(l);
-//		
-//		System.out.println(index);
-//		System.out.println(l.toString());
-//		
-//		//a linked list of the pages that hold the table's data
-//		LinkedList<Page> pagesOfTable = null;
-//		//the last page in the pages that holds the table's data
-//		Page lastPage = null;
-//
-//		//looping on all our app's tables to find the table with the table name passed to the method
-//		//ie the table that the user wants to insert in
-//		for (int i = 0; i < tablesInApp.size(); i++)
-//		{
-//			Table table = tablesInApp.get(i);
-//			String tableName = table.getStrTableName();
-//			
-//			//if that's the table we're looking for
-//			if (tableName.equals(strTableName))
-//			{
-//				//getting the number of pages to perform binary search
-//				pagesOfTable = table.getPages();
-//				int numPages = pagesOfTable.size();
-//				int pageIndex = getPageNumber(strTableName, t, 0, numPages - 1, index);
-//			}
-//		}		 
-//				
-//
-//	}
-//
-//	private int getPageNumber(String strTableName, Tuple data, int start, int end, int clusteringKeyIndex)
-//	{
-//		int index = (start + end)/2;
-//		
-//		String pagePath = "src/DB2App/" + strTableName + " Table/" + strTableName + " Page" + index + ".ser";
-//		FileInputStream fileIn = new FileInputStream(pagePath);
-//		ObjectInputStream in = new ObjectInputStream(fileIn);
-//		
-//		
-//		
-//	    ArrayList<Tuple> results = (ArrayList<Tuple>)in.readObject();
-//	    
-//	    if (start == end)
-//	    	return index;
-//	    data.getTupleInfo().get(clusteringKeyIndex).getClass();
-//	    else if ( (data.getTupleInfo().get(clusteringKeyIndex))) .compareTo 
-//	    		((results.get(0)).getTupleInfo().get(clusteringKeyIndex)) > 0)
-//	    {
-//	    	
-//	    }
-//		else if ( ((results.get(0)).getTupleInfo().get(clusteringKeyIndex)) .compareTo 
-//				(data.getTupleInfo().get(clusteringKeyIndex)) < 0 )
-//		{
-//			
-//		}
-//
-//
-//	    
-//	    
-//	    
-//	    
-//
-//	}
-
-	//htblColNameType is a hashtable with key: column name (String), and value: column value (Object)
-	//eg. for <Key,Value> : <"id",375>
-	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException
+	public static Page createPage(Table t)
 	{
+		//creating a new page, for table "t", and with ID equal to the number of pages for that table + 1
+		Page p = new Page(t.getStrTableName(), t.getPages().size() + 1);
+		
+		t.getPages().add(p);
 		
 		
+		
+
+		return p;
+	}
+	
+	public void insertSorted(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException
+	{
 		//Check for exceptions
 		int index = checkDataInsertionExceptions(strTableName, htblColNameValue);
-		
+				
 		//Adding DateTime at the time of inserting the tuple
 		htblColNameValue.put("TouchDate", LocalDateTime.now());
-		
+				
 		//******** initialize the tuple with the information:
 
 		/*check http://www.java2s.com/Tutorial/Java/0140__Collections/FetchingKeysandValuesthegetmethod.htm
 		  for the use of enumeration */
-		
-		//getting the column names
-		Enumeration<String> colNames = htblColNameValue.keys();
+			
 		//getting the column values
 		Enumeration<Object> colValues = htblColNameValue.elements();
 
 		//an empty linked list to store in it the tuple's data
 		LinkedList<Object> l = new LinkedList<Object>();
-
+		
 		//extracting the column names and values, and adding the values to the linked list
 		while (colValues.hasMoreElements())
 		{
@@ -220,12 +155,9 @@ public class DBApp
 		}
 		//creating a tuple object with a linked list of the tuple's data
 		Tuple t = new Tuple(l);
-
-		//********* writing the tuple to a page::
-		//we need to locate the right page that we should write the tuple to
-		//that is (for now), the last p age in the table that has space
-		//if it doesn't have space, we shift
-		//*********** NOW THAT NEEDS TO CHANGE, WE NEED TO FIND THE RIGHT PAGE SO THAT THE DATA IS SORTED =D
+		
+		//System.out.println(index);
+		//System.out.println(l.toString());
 		
 		//a linked list of the pages that hold the table's data
 		LinkedList<Page> pagesOfTable = null;
@@ -242,76 +174,406 @@ public class DBApp
 			//if that's the table we're looking for
 			if (tableName.equals(strTableName))
 			{
-				//getting the last page of that table
+				//getting the number of pages to perform binary search
 				pagesOfTable = table.getPages();
-				lastPage = pagesOfTable.getLast();
-
-				//if the last page is full, create a new empty page
-				if (lastPage.getNumOfTuples() == maxObjectsPerPage)
+				int numPages = pagesOfTable.size();
+				int pageIndex = getPageNumber(strTableName, t, 1, numPages, index);
+				System.out.print("tuple will be inserted in " + pageIndex);
+				
+				ArrayList<Tuple> pageContent = insertIntoPage(strTableName, pageIndex, t, index);
+				if (pageContent.size() > maxObjectsPerPage)
 				{
+					
+					//renaming all following files
+					shift(strTableName, pageIndex, numPages);
+					for (int k = numPages; k >  pageIndex; k-=1)
+					{
+						System.out.println("k: " + k);
+						File oldfile = new File("src/DB2App/" + strTableName + " Table/Page " + k + ".ser");
+						File newfile = new File("src/DB2App/" + strTableName + " Table/Page " + (k+1) + ".ser");
+						if (newfile.exists())
+							System.out.println(newfile.getPath());
+						if(oldfile.renameTo(newfile))
+							System.out.println("success");
+						else
+							System.out.println("fail");
+					}
+					Page p = new Page(tableName, numPages + 1);
+					table.getPages().add(p);
+					
+					//dividing content to two pages
+					ArrayList<Tuple> newPageContent = new ArrayList<Tuple>();
+					for (int j = maxObjectsPerPage/2; j <= maxObjectsPerPage; j++)
+						newPageContent.add(pageContent.remove(maxObjectsPerPage/2));
+					File file = new File("src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser");
+					file.delete();
+					try
+					{
+						//creating the actual page in the table's directory
+						FileWriter fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser", true);
+						FileOutputStream fileOut = new FileOutputStream(
+								"src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser");
 
-					Page p = createPage(table);
-					//make the 'former' last page refers to the 'new' last page "p"
-					pagesOfTable.getLast().setNextPage(p);
-					//adding the newly created page to the table's linked list of pages
-					(tablesInApp.get(i).getPages()).add(p);
-					//getting the newly created last page, that's the page we'll insert in
-					lastPage = tablesInApp.get(i).getPages().getLast();
+						ObjectOutputStream out = new ObjectOutputStream(fileOut);
+
+						System.out.println(pageContent.toString());
+						System.out.println(newPageContent.toString());
+						out.writeObject(pageContent);
+
+						
+						
+						fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " + (pageIndex+1) + ".ser", true);
+						fileOut = new FileOutputStream(
+								"src/DB2App/" + strTableName + " Table/Page " + (pageIndex+1) + ".ser");
+
+						out = new ObjectOutputStream(fileOut);
+
+						
+						out.writeObject(newPageContent);
+
+						out.close();
+						fileOut.close();
+
+					} catch (IOException e)
+					{
+						System.out.println("Could Not Create a Page!");
+					}
+					
+				} 
+				else
+				{
+					File file = new File("src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser");
+					file.delete();
+					try
+					{
+						//creating the actual page in the table's directory
+						FileWriter fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser", true);
+						FileOutputStream fileOut = new FileOutputStream(
+								"src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser");
+
+						ObjectOutputStream out = new ObjectOutputStream(fileOut);
+
+						System.out.println(pageContent.toString());
+						out.writeObject(pageContent);
+
+						out.close();
+						fileOut.close();
+
+					} catch (IOException e)
+					{
+						System.out.println("Could Not Create a Page!");
+					}
 				}
-				//incementing the number of tuples in that page as we'll insert in it a new tuple
-				lastPage.setNumOfTuples(pagesOfTable.getLast().getNumOfTuples() + 1);
-				;
-				break;
 			}
-		}
+		}		 
+				
 
-		try
+	}
+
+	private void shift(String strTableName, int start, int end) {
+		for (int i = end; i > start; i--)
 		{
-			//getting the id of the last page, ie the page we'll insert in 
-			int pageID = lastPage.getID();
+			ObjectInputStream in;
+			ArrayList<Tuple> results = null;
+			try {
+				String pagePath = "src/DB2App/" + strTableName + " Table/Page " + i + ".ser";
+				FileInputStream fileIn = new FileInputStream(pagePath);
+				in = new ObjectInputStream(fileIn);
+				results = (ArrayList<Tuple>)in.readObject();
+				
+				FileWriter fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " +(i+1)+ ".ser", true);
+				FileOutputStream fileOut = new FileOutputStream(
+						"src/DB2App/" + strTableName + " Table/Page " + (i+1) + ".ser");
 
-			//locating the page in the table's folder
-			FileOutputStream fileOut = new FileOutputStream(
-					"src/DB2App/" + strTableName + " Table/Page " + pageID + ".ser");
+				ObjectOutputStream out = new ObjectOutputStream(fileOut);
 
-			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+				
+				out.writeObject(results);
 
-			//.writeObject(Object) is a method for serializable
-			// check https://www.tutorialspoint.com/java/java_serialization.htm to see how serialization and deserialization works =D
-			out.writeObject(t);
+				out.close();
+				fileOut.close();
 
-			out.close();
-			fileOut.close();
-
-			//uncomment that to see the tuple's data deserialized
-			//don't forget to uncomment the catch part as well, line 193
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
 			
-			 FileInputStream fileIn = new FileInputStream("src/DB2App/" +
-			 strTableName + " Table/Page " + pageID + ".ser");
-			 ObjectInputStream in = new ObjectInputStream(fileIn); Tuple tn = (Tuple)(in.readObject()); 
-			 System.out.println(tn.toString());
-			 in.close();
-
-		} catch (IOException i)
-		{
-			i.printStackTrace();
-		} 
-		catch (ClassNotFoundException e) {
-			e.printStackTrace(); 
+			
+			
 		}
-			 
-
 	}
 
-	public static Page createPage(Table t)
+	private ArrayList<Tuple> insertIntoPage(String strTableName, int pageIndex, Tuple t, int clusteringKeyIndex) {
+		ObjectInputStream in;
+		ArrayList<Tuple> results = null;
+		try {
+			String pagePath = "src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser";
+			FileInputStream fileIn = new FileInputStream(pagePath);
+			in = new ObjectInputStream(fileIn);
+			results = (ArrayList<Tuple>)in.readObject();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		System.out.println("fetched results: " + results.toString());
+		int position = 0;
+		//System.out.println(t.getTupleInfo().get(clusteringKeyIndex).getClass().toString());
+		for (Tuple tuple: results)
+		{
+			if ((t.getTupleInfo().get(clusteringKeyIndex).getClass().toString().substring(6)).equals("java.lang.String"))
+			{
+				if ( ((String)(t.getTupleInfo().get(clusteringKeyIndex))) .compareTo  
+						((String)(tuple.getTupleInfo().get(clusteringKeyIndex))) < 0)
+				{
+					results.add(position, t);
+					return results;
+				}
+			}
+			else if ((t.getTupleInfo().get(clusteringKeyIndex).getClass().toString().substring(6)).equals("java.lang.Integer"))
+			{
+				//System.out.println("test");
+				if ( ((Integer)(t.getTupleInfo().get(clusteringKeyIndex))) .compareTo  
+						((Integer)(tuple.getTupleInfo().get(clusteringKeyIndex))) < 0)
+				{
+					results.add(position, t);
+					return results;
+				}
+			}
+			else if ((t.getTupleInfo().get(clusteringKeyIndex).getClass().toString().substring(6)).equals("java.lang.Double"))
+			{
+				if ( ((Double)(t.getTupleInfo().get(clusteringKeyIndex))) .compareTo  
+						((Double)(tuple.getTupleInfo().get(clusteringKeyIndex))) < 0)
+				{
+					results.add(position, t);
+					return results;
+				}
+			}
+			else if ((t.getTupleInfo().get(clusteringKeyIndex).getClass().toString().substring(6)).equals("java.util.Date"))
+			{
+				if ( ((Date)(t.getTupleInfo().get(clusteringKeyIndex))) .compareTo  
+						((Date)(tuple.getTupleInfo().get(clusteringKeyIndex))) < 0)
+				{
+					results.add(position, t);
+					return results;
+				}
+			}
+			position++;
+		}
+		results.add(position, t);
+		System.out.println("Results: " + results.toString());
+		return results;
+		
+	}
+
+	private int getPageNumber(String strTableName, Tuple data, int start, int end, int clusteringKeyIndex)
 	{
-		//creating a new page, for table "t", and with ID equal to the number of pages for that table + 1
-		Page p = new Page(t.getStrTableName(), t.getPages().size() + 1);
-		//adding this newly created page to the table's list of pages
-		t.getPages().add(p);
+		System.out.println("start: " + start + "end: " + end);
+		int index = (start + end)/2;
+		
+		if (start == end)
+	    	return index;
+		if (index == 0)
+			return 1;
+		ObjectInputStream in;
+		ArrayList<Tuple> results = null;
+		try {
+			String pagePath = "src/DB2App/" + strTableName + " Table/Page " + index + ".ser";
+			System.out.println(index + "fady");
+			FileInputStream fileIn = new FileInputStream(pagePath);
+			in = new ObjectInputStream(fileIn);
+			results = (ArrayList<Tuple>)in.readObject();
 
-		return p;
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		
+		
+		if ((data.getTupleInfo().get(clusteringKeyIndex).getClass().toString().substring(6)).equals("java.lang.String"))
+		{
+			if ( ((String)(data.getTupleInfo().get(clusteringKeyIndex))).compareTo 
+					( (String)(results.get(0).getTupleInfo().get(clusteringKeyIndex))) < 0 )
+				return getPageNumber(strTableName, data, start, index - 1, clusteringKeyIndex);
+			else if ( ((String)(data.getTupleInfo().get(clusteringKeyIndex))).compareTo 
+					( (String)(results.get(results.size() - 1).getTupleInfo().get(clusteringKeyIndex))) > 0 )
+				return getPageNumber(strTableName, data, index + 1, end, clusteringKeyIndex);
+			else 
+				return index;
+		}
+		else if ((data.getTupleInfo().get(clusteringKeyIndex).getClass().toString().substring(6)).equals("java.lang.Integer"))
+		{
+			if ( ((Integer)(data.getTupleInfo().get(clusteringKeyIndex))).compareTo 
+					( (Integer)(results.get(0).getTupleInfo().get(clusteringKeyIndex))) < 0 )
+				return getPageNumber(strTableName, data, start, index - 1, clusteringKeyIndex);
+			else if ( ((Integer)(data.getTupleInfo().get(clusteringKeyIndex))).compareTo 
+					( (Integer)(results.get(results.size()-1).getTupleInfo().get(clusteringKeyIndex))) > 0 )
+				return getPageNumber(strTableName, data, index + 1, end, clusteringKeyIndex);
+			else 
+				return index;
+		}
+		else if ((data.getTupleInfo().get(clusteringKeyIndex).getClass().toString().substring(6)).equals("java.lang.Double"))
+		{
+			if ( ((Double)(data.getTupleInfo().get(clusteringKeyIndex))).compareTo 
+					( (Double)(results.get(0).getTupleInfo().get(clusteringKeyIndex))) < 0 )
+				return getPageNumber(strTableName, data, start, index - 1, clusteringKeyIndex);
+			else if ( ((Double)(data.getTupleInfo().get(clusteringKeyIndex))).compareTo 
+					( (Double)(results.get(results.size()-1).getTupleInfo().get(clusteringKeyIndex))) > 0 )
+				return getPageNumber(strTableName, data, index + 1, end, clusteringKeyIndex);
+			else 
+				return index;
+		}
+		else if ((data.getTupleInfo().get(clusteringKeyIndex).getClass().toString().substring(6)).equals("java.util.Date"))
+		{
+			if ( ((Date)(data.getTupleInfo().get(clusteringKeyIndex))).compareTo 
+					( (Date)(results.get(0).getTupleInfo().get(clusteringKeyIndex))) < 0 )
+				return getPageNumber(strTableName, data, start, index - 1, clusteringKeyIndex);
+			else if ( ((Date)(data.getTupleInfo().get(clusteringKeyIndex))).compareTo 
+					( (Date)(results.get(results.size()-1).getTupleInfo().get(clusteringKeyIndex))) > 0 )
+				return getPageNumber(strTableName, data, index + 1, end, clusteringKeyIndex);
+			else 
+				return index;
+		}
+		
+	    
+	    
+	    
+	
+
+
+//	    data.getTupleInfo().get(clusteringKeyIndex).getClass().toString();
+//		data.getTupleInfo().get(clusteringKeyIndex);
+//		results.get(0).getTupleInfo().get(results.size()-1);
+	    return 0;
+
 	}
+	
+	
+
+	//htblColNameType is a hashtable with key: column name (String), and value: column value (Object)
+	//eg. for <Key,Value> : <"id",375>
+//	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException
+//	{
+//		
+//		
+//		//Check for exceptions
+//		int index = checkDataInsertionExceptions(strTableName, htblColNameValue);
+//		
+//		//Adding DateTime at the time of inserting the tuple
+//		htblColNameValue.put("TouchDate", LocalDateTime.now());
+//		
+//		//******** initialize the tuple with the information:
+//
+//		/*check http://www.java2s.com/Tutorial/Java/0140__Collections/FetchingKeysandValuesthegetmethod.htm
+//		  for the use of enumeration */
+//		
+//		//getting the column names
+//		Enumeration<String> colNames = htblColNameValue.keys();
+//		//getting the column values
+//		Enumeration<Object> colValues = htblColNameValue.elements();
+//
+//		//an empty linked list to store in it the tuple's data
+//		LinkedList<Object> l = new LinkedList<Object>();
+//
+//		//extracting the column names and values, and adding the values to the linked list
+//		while (colValues.hasMoreElements())
+//		{
+//			//String curName = colNames.nextElement();
+//			Object curValue = colValues.nextElement();
+//
+//			l.addFirst(curValue);
+//		}
+//		//creating a tuple object with a linked list of the tuple's data
+//		Tuple t = new Tuple(l);
+//
+//		//********* writing the tuple to a page::
+//		//we need to locate the right page that we should write the tuple to
+//		//that is (for now), the last p age in the table that has space
+//		//if it doesn't have space, we shift
+//		//*********** NOW THAT NEEDS TO CHANGE, WE NEED TO FIND THE RIGHT PAGE SO THAT THE DATA IS SORTED =D
+//		
+//		//a linked list of the pages that hold the table's data
+//		LinkedList<Page> pagesOfTable = null;
+//		//the last page in the pages that holds the table's data
+//		Page lastPage = null;
+//
+//		//looping on all our app's tables to find the table with the table name passed to the method
+//		//ie the table that the user wants to insert in
+//		for (int i = 0; i < tablesInApp.size(); i++)
+//		{
+//			Table table = tablesInApp.get(i);
+//			String tableName = table.getStrTableName();
+//			
+//			//if that's the table we're looking for
+//			if (tableName.equals(strTableName))
+//			{
+//				//getting the last page of that table
+//				pagesOfTable = table.getPages();
+//				lastPage = pagesOfTable.getLast();
+//
+//				//if the last page is full, create a new empty page
+//				if (lastPage.getNumOfTuples() == maxObjectsPerPage)
+//				{
+//
+//					Page p = createPage(table);
+//					//make the 'former' last page refers to the 'new' last page "p"
+//					pagesOfTable.getLast().setNextPage(p);
+//					//adding the newly created page to the table's linked list of pages
+//					(tablesInApp.get(i).getPages()).add(p);
+//					//getting the newly created last page, that's the page we'll insert in
+//					lastPage = tablesInApp.get(i).getPages().getLast();
+//				}
+//				//incementing the number of tuples in that page as we'll insert in it a new tuple
+//				lastPage.setNumOfTuples(pagesOfTable.getLast().getNumOfTuples() + 1);
+//				;
+//				break;
+//			}
+//		}
+//
+//		try
+//		{
+//			//getting the id of the last page, ie the page we'll insert in 
+//			int pageID = lastPage.getID();
+//
+//			//locating the page in the table's folder
+//			FileOutputStream fileOut = new FileOutputStream(
+//					"src/DB2App/" + strTableName + " Table/Page " + pageID + ".ser");
+//
+//			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+//
+//			//.writeObject(Object) is a method for serializable
+//			// check https://www.tutorialspoint.com/java/java_serialization.htm to see how serialization and deserialization works =D
+//			out.writeObject(t);
+//
+//			out.close();
+//			fileOut.close();
+//
+//			//uncomment that to see the tuple's data deserialized
+//			//don't forget to uncomment the catch part as well, line 193
+//			
+//			 FileInputStream fileIn = new FileInputStream("src/DB2App/" +
+//			 strTableName + " Table/Page " + pageID + ".ser");
+//			 ObjectInputStream in = new ObjectInputStream(fileIn); Tuple tn = (Tuple)(in.readObject()); 
+//			 System.out.println(tn.toString());
+//			 in.close();
+//
+//		} catch (IOException i)
+//		{
+//			i.printStackTrace();
+//		} 
+//		catch (ClassNotFoundException e) {
+//			e.printStackTrace(); 
+//		}
+//			 
+//
+//	}
+
+
 
 	public static void addMetaData(String strTableName, String strClusteringKeyColumn,
 			Hashtable<String, String> htblColNameType)
@@ -430,7 +692,7 @@ public class DBApp
 		} catch (IOException e) {
 			System.out.println("Metadata File Not Found!");
 		}
-		System.out.println(args - keyIndex);
+		//System.out.println(args - keyIndex);
 		return args - keyIndex;
 		
 	}
