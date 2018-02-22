@@ -8,6 +8,7 @@ import exceptions.DBInCorrectEntriesNumber;
 import exceptions.DBNameInUse;
 import exceptions.DBPrimaryKeyNotUnique;
 import exceptions.DBPrimaryKeyNull;
+import exceptions.DBRowNotFound;
 import exceptions.DBTableNotFound;
 import exceptions.DBTypeMismatch;
 import exceptions.DBUnsupportedType;
@@ -127,6 +128,242 @@ public class DBApp
 		return p;
 	}
 	
+	public void updateTable(String strTableName, String strKey, Hashtable<String,Object> htblColNameValue ) throws DBAppException
+	{
+		htblColNameValue.get(strKey);
+	}
+	
+	public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException
+	{
+		int index = checkDataInsertionExceptions(strTableName, htblColNameValue);
+		Enumeration<Object> colValues = htblColNameValue.elements();
+
+		//an empty linked list to store in it the tuple's data
+		LinkedList<Object> l = new LinkedList<Object>();
+		
+		//extracting the column names and values, and adding the values to the linked list
+		while (colValues.hasMoreElements())
+		{
+			//String curName = colNames.nextElement();
+			Object curValue = colValues.nextElement();
+
+			l.addFirst(curValue);
+		}
+		//creating a tuple object with a linked list of the tuple's data
+		Tuple t = new Tuple(l);
+		
+		for (int i = 0; i < tablesInApp.size(); i++)
+		{
+			Table table = tablesInApp.get(i);
+			String tableName = table.getStrTableName();
+			
+			//if that's the table we're looking for
+			if (tableName.equals(strTableName))
+			{
+				//getting the number of pages to perform binary search
+				int numPages = table.getPages().size();
+				int pageIndex = getPageNumber(strTableName, t, 1, numPages, index);
+				int pos = deleteFromPage(strTableName, pageIndex, t, index);
+				if (pos == -1)
+				{
+					throw new DBRowNotFound();
+				}
+				else
+				{
+					ObjectInputStream in;
+					ArrayList<Tuple> results = null;
+					try {
+						String pagePath = "src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser";
+						FileInputStream fileIn = new FileInputStream(pagePath);
+						in = new ObjectInputStream(fileIn);
+						results = (ArrayList<Tuple>)in.readObject();
+
+					} catch (IOException e) {
+						e.printStackTrace();
+					} catch (ClassNotFoundException e) {
+						e.printStackTrace();
+					}
+					results.remove(pos);
+					if (results.size() == 0)
+					{
+						shiftDown(strTableName, pageIndex, numPages);
+						table.getPages().remove(table.getPages().size() -1);
+					}
+					else
+					{
+						File file = new File("src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser");
+						file.delete();
+						try
+						{
+							//creating the actual page in the table's directory
+							FileWriter fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser", true);
+							FileOutputStream fileOut = new FileOutputStream(
+									"src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser");
+
+							ObjectOutputStream out = new ObjectOutputStream(fileOut);
+
+							//System.out.println(pageContent.toString());
+							out.writeObject(results);
+
+							out.close();
+							fileOut.close();
+
+						} catch (IOException e)
+						{
+							System.out.println("Could Not Create a Page!");
+						}
+					}
+				}
+				
+			}
+		}
+
+	}
+	
+	private void shiftDown(String strTableName, int start, int end) {
+		if (start == end)
+		{
+
+			try
+			{
+				//creating the actual page in the table's directory
+				FileWriter fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " + end + ".ser", true);
+				FileOutputStream fileOut = new FileOutputStream(
+						"src/DB2App/" + strTableName + " Table/Page " + end + ".ser");
+
+				ObjectOutputStream out = new ObjectOutputStream(fileOut);
+
+				//System.out.println(pageContent.toString());
+				out.writeObject(null);
+
+				out.close();
+				fileOut.close();
+
+			} catch (IOException e)
+			{
+				System.out.println("Could Not Create a Page!");
+			}
+
+		}
+		
+		for (int i = start+1; i <= end; i++)
+		{
+			ObjectInputStream in;
+			ArrayList<Tuple> results = null;
+			try {
+				String pagePath = "src/DB2App/" + strTableName + " Table/Page " + i + ".ser";
+				FileInputStream fileIn = new FileInputStream(pagePath);
+				in = new ObjectInputStream(fileIn);
+				results = (ArrayList<Tuple>)in.readObject();
+				
+				FileWriter fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " +(i-1)+ ".ser", true);
+				FileOutputStream fileOut = new FileOutputStream(
+						"src/DB2App/" + strTableName + " Table/Page " + (i-1) + ".ser");
+
+				ObjectOutputStream out = new ObjectOutputStream(fileOut);
+
+				
+				out.writeObject(results);
+
+				out.close();
+				fileOut.close();
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+			
+			if (end == i)
+			{
+				try
+				{
+					//creating the actual page in the table's directory
+					FileWriter fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " + end + ".ser", true);
+					FileOutputStream fileOut = new FileOutputStream(
+							"src/DB2App/" + strTableName + " Table/Page " + end + ".ser");
+
+					ObjectOutputStream out = new ObjectOutputStream(fileOut);
+
+					//System.out.println(pageContent.toString());
+					out.writeObject(null);
+
+					out.close();
+					fileOut.close();
+
+				} catch (IOException e)
+				{
+					System.out.println("Could Not Create a Page!");
+				}
+
+			}
+			
+		}
+	}
+
+	private int deleteFromPage(String strTableName, int pageIndex, Tuple t, int clusteringKeyIndex) {
+		ObjectInputStream in;
+		ArrayList<Tuple> results = null;
+		try {
+			String pagePath = "src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser";
+			FileInputStream fileIn = new FileInputStream(pagePath);
+			in = new ObjectInputStream(fileIn);
+			results = (ArrayList<Tuple>)in.readObject();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		//System.out.println("fetched results: " + results.toString());
+		int position = 0;
+		//System.out.println(t.getTupleInfo().get(clusteringKeyIndex).getClass().toString());
+		for (Tuple tuple: results)
+		{
+			if ((t.getTupleInfo().get(clusteringKeyIndex).getClass().toString().substring(6)).equals("java.lang.String"))
+			{
+				if ( ((String)(t.getTupleInfo().get(clusteringKeyIndex))) .compareTo  
+						((String)(tuple.getTupleInfo().get(clusteringKeyIndex))) == 0)
+				{
+					return position;
+				}
+				
+			}
+			else if ((t.getTupleInfo().get(clusteringKeyIndex).getClass().toString().substring(6)).equals("java.lang.Integer"))
+			{
+				//System.out.println("test");
+				if ( ((Integer)(t.getTupleInfo().get(clusteringKeyIndex))) .compareTo  
+						((Integer)(tuple.getTupleInfo().get(clusteringKeyIndex))) == 0)
+				{
+					return position;
+				}
+				
+			}
+			else if ((t.getTupleInfo().get(clusteringKeyIndex).getClass().toString().substring(6)).equals("java.lang.Double"))
+			{
+				if ( ((Double)(t.getTupleInfo().get(clusteringKeyIndex))) .compareTo  
+						((Double)(tuple.getTupleInfo().get(clusteringKeyIndex))) == 0)
+				{
+					return position;
+				}
+				
+			}
+			else if ((t.getTupleInfo().get(clusteringKeyIndex).getClass().toString().substring(6)).equals("java.util.Date"))
+			{
+				if ( ((Date)(t.getTupleInfo().get(clusteringKeyIndex))) .compareTo  
+						((Date)(tuple.getTupleInfo().get(clusteringKeyIndex))) == 0)
+				{
+					return position;
+				}
+			
+			}
+			position++;
+		}
+		return -1;
+		
+	}
+
 	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException
 	{
 		//Check for exceptions
@@ -304,6 +541,8 @@ public class DBApp
 			
 		}
 	}
+	
+
 
 	private ArrayList<Tuple> insertIntoPage(String strTableName, int pageIndex, Tuple t, int clusteringKeyIndex) throws DBPrimaryKeyNotUnique {
 		ObjectInputStream in;

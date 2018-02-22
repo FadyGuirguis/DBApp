@@ -143,6 +143,32 @@ public class DBAppTest {
 			htblColNameValue.put("gpa", new Double(0.95));
 			ourApp.insertIntoTable(strTableName, htblColNameValue);
 			
+			htblColNameValue.clear();
+			htblColNameValue.put("id", new Integer(570));
+			htblColNameValue.put("name", new String("Monica"));
+			htblColNameValue.put("gpa", new Double(0.95));
+			ourApp.deleteFromTable(strTableName, htblColNameValue);
+			
+			htblColNameValue.clear();
+			htblColNameValue.put("id", new Integer(780));
+			htblColNameValue.put("name", new String("Maggie"));
+			htblColNameValue.put("gpa", new Double(0.95));
+			ourApp.deleteFromTable(strTableName, htblColNameValue);
+//			
+
+			htblColNameValue.clear();
+			htblColNameValue.put("id", new Integer(780));
+			htblColNameValue.put("name", new String("Maggie"));
+			htblColNameValue.put("gpa", new Double(0.95));
+			ourApp.insertIntoTable(strTableName, htblColNameValue);
+//			
+			htblColNameValue.clear();
+			htblColNameValue.put("id", new Integer(570));
+			htblColNameValue.put("name", new String("Monica"));
+			htblColNameValue.put("gpa", new Double(0.95));
+			ourApp.insertIntoTable(strTableName, htblColNameValue);
+	
+			
 		} catch (DBAppException e) {
 			// TODO Auto-generated catch block
 			System.out.println(e.getMessage());
