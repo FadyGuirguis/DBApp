@@ -18,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -33,7 +34,7 @@ public class DBApp
 {
 	//the max number of allowed objects (tuples/rows) in a page
 	//we set it for an arbitrary small number for the sake of testing
-	private final int maxObjectsPerPage = 4;
+	private int maxObjectsPerPage;
 	
 	//keeping track of all the tables created in our application
 	private LinkedList<Table> tablesInApp = new LinkedList<Table>();
@@ -41,12 +42,25 @@ public class DBApp
 	//our initialization
 	public void init()
 	{
+		File file = new File("config/DBApp.properties");
+		try {
+			FileReader fr = new FileReader(file);
+			Properties props = new Properties();
+			props.load(fr);
+			this.maxObjectsPerPage = Integer.parseInt(props.getProperty("MaximumRowsCountinPage"));
+			
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		   
 		//creating our mother directory (folder) that holds all our tables in it and the metadata file as well
-		File AppDirectory = new File("src/DB2App");
+		File AppDirectory = new File("data");
 		AppDirectory.mkdir();
 
 		//creating the metadata file
-		File metaData = new File("src/DB2App/metaData.csv");
+		File metaData = new File("data/metaData.csv");
 		try
 		{
 			metaData.createNewFile();
@@ -54,7 +68,7 @@ public class DBApp
 			String header = "Table Name, Column Name, Column Type, Key, Indexed";
 			//adding an empty row
 			header += System.lineSeparator();
-			PrintWriter out = new PrintWriter("src/DB2App/metaData.csv");
+			PrintWriter out = new PrintWriter("data/metaData.csv");
 			out.println(header);
 			out.close();
 		} catch (IOException e)
@@ -75,7 +89,7 @@ public class DBApp
 
 		// making a directory for the table
 		String dirName = strTableName + " Table";
-		File newDir = new File("src/DB2App/" + dirName);
+		File newDir = new File("data/" + dirName);
 		newDir.mkdir();
 		
 		// adding Touch date column
@@ -92,9 +106,9 @@ public class DBApp
 		try
 		{
 			//creating the actual page in the table's directory
-			FileWriter fw = new FileWriter("src/DB2App/" + strTableName+ " Table/Page 1.ser", true);
+			FileWriter fw = new FileWriter("data/" + strTableName+ " Table/Page 1.ser", true);
 			FileOutputStream fileOut = new FileOutputStream(
-					"src/DB2App/" + strTableName+ " Table/Page 1.ser");
+					"data/" + strTableName+ " Table/Page 1.ser");
 
 			ObjectOutputStream out = new ObjectOutputStream(fileOut);
 
@@ -131,6 +145,7 @@ public class DBApp
 	public void updateTable(String strTableName, String strKey, Hashtable<String,Object> htblColNameValue ) throws DBAppException
 	{
 		int index = checkDataInsertionExceptions(strTableName, htblColNameValue);
+		htblColNameValue.put("TouchDate", LocalDateTime.now());
 		Enumeration<Object> colValues = htblColNameValue.elements();
 
 		//an empty linked list to store in it the tuple's data
@@ -168,7 +183,7 @@ public class DBApp
 					ObjectInputStream in;
 					ArrayList<Tuple> results = null;
 					try {
-						String pagePath = "src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser";
+						String pagePath = "data/" + strTableName + " Table/Page " + pageIndex + ".ser";
 						FileInputStream fileIn = new FileInputStream(pagePath);
 						in = new ObjectInputStream(fileIn);
 						results = (ArrayList<Tuple>)in.readObject();
@@ -180,14 +195,14 @@ public class DBApp
 					}
 					results.remove(pos);
 					results.add(pos, t);
-					File file = new File("src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser");
+					File file = new File("data/" + strTableName + " Table/Page " + pageIndex + ".ser");
 					file.delete();
 					try
 					{
 						//creating the actual page in the table's directory
-						FileWriter fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser", true);
+						FileWriter fw = new FileWriter("data/" + strTableName + " Table/Page " + pageIndex + ".ser", true);
 						FileOutputStream fileOut = new FileOutputStream(
-								"src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser");
+								"data/" + strTableName + " Table/Page " + pageIndex + ".ser");
 
 						ObjectOutputStream out = new ObjectOutputStream(fileOut);
 
@@ -246,7 +261,7 @@ public class DBApp
 					ObjectInputStream in;
 					ArrayList<Tuple> results = null;
 					try {
-						String pagePath = "src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser";
+						String pagePath = "data/" + strTableName + " Table/Page " + pageIndex + ".ser";
 						FileInputStream fileIn = new FileInputStream(pagePath);
 						in = new ObjectInputStream(fileIn);
 						results = (ArrayList<Tuple>)in.readObject();
@@ -264,14 +279,14 @@ public class DBApp
 					}
 					else
 					{
-						File file = new File("src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser");
+						File file = new File("data/" + strTableName + " Table/Page " + pageIndex + ".ser");
 						file.delete();
 						try
 						{
 							//creating the actual page in the table's directory
-							FileWriter fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser", true);
+							FileWriter fw = new FileWriter("data/" + strTableName + " Table/Page " + pageIndex + ".ser", true);
 							FileOutputStream fileOut = new FileOutputStream(
-									"src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser");
+									"data/" + strTableName + " Table/Page " + pageIndex + ".ser");
 
 							ObjectOutputStream out = new ObjectOutputStream(fileOut);
 
@@ -300,9 +315,9 @@ public class DBApp
 			try
 			{
 				//creating the actual page in the table's directory
-				FileWriter fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " + end + ".ser", true);
+				FileWriter fw = new FileWriter("data/" + strTableName + " Table/Page " + end + ".ser", true);
 				FileOutputStream fileOut = new FileOutputStream(
-						"src/DB2App/" + strTableName + " Table/Page " + end + ".ser");
+						"data/" + strTableName + " Table/Page " + end + ".ser");
 
 				ObjectOutputStream out = new ObjectOutputStream(fileOut);
 
@@ -324,14 +339,14 @@ public class DBApp
 			ObjectInputStream in;
 			ArrayList<Tuple> results = null;
 			try {
-				String pagePath = "src/DB2App/" + strTableName + " Table/Page " + i + ".ser";
+				String pagePath = "data/" + strTableName + " Table/Page " + i + ".ser";
 				FileInputStream fileIn = new FileInputStream(pagePath);
 				in = new ObjectInputStream(fileIn);
 				results = (ArrayList<Tuple>)in.readObject();
 				
-				FileWriter fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " +(i-1)+ ".ser", true);
+				FileWriter fw = new FileWriter("data/" + strTableName + " Table/Page " +(i-1)+ ".ser", true);
 				FileOutputStream fileOut = new FileOutputStream(
-						"src/DB2App/" + strTableName + " Table/Page " + (i-1) + ".ser");
+						"data/" + strTableName + " Table/Page " + (i-1) + ".ser");
 
 				ObjectOutputStream out = new ObjectOutputStream(fileOut);
 
@@ -352,9 +367,9 @@ public class DBApp
 				try
 				{
 					//creating the actual page in the table's directory
-					FileWriter fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " + end + ".ser", true);
+					FileWriter fw = new FileWriter("data/" + strTableName + " Table/Page " + end + ".ser", true);
 					FileOutputStream fileOut = new FileOutputStream(
-							"src/DB2App/" + strTableName + " Table/Page " + end + ".ser");
+							"data/" + strTableName + " Table/Page " + end + ".ser");
 
 					ObjectOutputStream out = new ObjectOutputStream(fileOut);
 
@@ -378,7 +393,7 @@ public class DBApp
 		ObjectInputStream in;
 		ArrayList<Tuple> results = null;
 		try {
-			String pagePath = "src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser";
+			String pagePath = "data/" + strTableName + " Table/Page " + pageIndex + ".ser";
 			FileInputStream fileIn = new FileInputStream(pagePath);
 			in = new ObjectInputStream(fileIn);
 			results = (ArrayList<Tuple>)in.readObject();
@@ -441,7 +456,7 @@ public class DBApp
 		ObjectInputStream in;
 		ArrayList<Tuple> results = null;
 		try {
-			String pagePath = "src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser";
+			String pagePath = "data/" + strTableName + " Table/Page " + pageIndex + ".ser";
 			FileInputStream fileIn = new FileInputStream(pagePath);
 			in = new ObjectInputStream(fileIn);
 			results = (ArrayList<Tuple>)in.readObject();
@@ -569,8 +584,8 @@ public class DBApp
 //					for (int k = numPages; k >  pageIndex; k-=1)
 //					{
 //						System.out.println("k: " + k);
-//						File oldfile = new File("src/DB2App/" + strTableName + " Table/Page " + k + ".ser");
-//						File newfile = new File("src/DB2App/" + strTableName + " Table/Page " + (k+1) + ".ser");
+//						File oldfile = new File("data/" + strTableName + " Table/Page " + k + ".ser");
+//						File newfile = new File("data/" + strTableName + " Table/Page " + (k+1) + ".ser");
 //						if (newfile.exists())
 //							System.out.println(newfile.getPath());
 //						if(oldfile.renameTo(newfile))
@@ -585,14 +600,14 @@ public class DBApp
 					ArrayList<Tuple> newPageContent = new ArrayList<Tuple>();
 					for (int j = maxObjectsPerPage/2; j <= maxObjectsPerPage; j++)
 						newPageContent.add(pageContent.remove(maxObjectsPerPage/2));
-					File file = new File("src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser");
+					File file = new File("data/" + strTableName + " Table/Page " + pageIndex + ".ser");
 					file.delete();
 					try
 					{
 						//creating the actual page in the table's directory
-						FileWriter fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser", true);
+						FileWriter fw = new FileWriter("data/" + strTableName + " Table/Page " + pageIndex + ".ser", true);
 						FileOutputStream fileOut = new FileOutputStream(
-								"src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser");
+								"data/" + strTableName + " Table/Page " + pageIndex + ".ser");
 
 						ObjectOutputStream out = new ObjectOutputStream(fileOut);
 
@@ -602,9 +617,9 @@ public class DBApp
 
 						
 						
-						fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " + (pageIndex+1) + ".ser", true);
+						fw = new FileWriter("data/" + strTableName + " Table/Page " + (pageIndex+1) + ".ser", true);
 						fileOut = new FileOutputStream(
-								"src/DB2App/" + strTableName + " Table/Page " + (pageIndex+1) + ".ser");
+								"data/" + strTableName + " Table/Page " + (pageIndex+1) + ".ser");
 
 						out = new ObjectOutputStream(fileOut);
 
@@ -622,14 +637,14 @@ public class DBApp
 				} 
 				else
 				{
-					File file = new File("src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser");
+					File file = new File("data/" + strTableName + " Table/Page " + pageIndex + ".ser");
 					file.delete();
 					try
 					{
 						//creating the actual page in the table's directory
-						FileWriter fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser", true);
+						FileWriter fw = new FileWriter("data/" + strTableName + " Table/Page " + pageIndex + ".ser", true);
 						FileOutputStream fileOut = new FileOutputStream(
-								"src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser");
+								"data/" + strTableName + " Table/Page " + pageIndex + ".ser");
 
 						ObjectOutputStream out = new ObjectOutputStream(fileOut);
 
@@ -656,14 +671,14 @@ public class DBApp
 			ObjectInputStream in;
 			ArrayList<Tuple> results = null;
 			try {
-				String pagePath = "src/DB2App/" + strTableName + " Table/Page " + i + ".ser";
+				String pagePath = "data/" + strTableName + " Table/Page " + i + ".ser";
 				FileInputStream fileIn = new FileInputStream(pagePath);
 				in = new ObjectInputStream(fileIn);
 				results = (ArrayList<Tuple>)in.readObject();
 				
-				FileWriter fw = new FileWriter("src/DB2App/" + strTableName + " Table/Page " +(i+1)+ ".ser", true);
+				FileWriter fw = new FileWriter("data/" + strTableName + " Table/Page " +(i+1)+ ".ser", true);
 				FileOutputStream fileOut = new FileOutputStream(
-						"src/DB2App/" + strTableName + " Table/Page " + (i+1) + ".ser");
+						"data/" + strTableName + " Table/Page " + (i+1) + ".ser");
 
 				ObjectOutputStream out = new ObjectOutputStream(fileOut);
 
@@ -690,7 +705,7 @@ public class DBApp
 		ObjectInputStream in;
 		ArrayList<Tuple> results = null;
 		try {
-			String pagePath = "src/DB2App/" + strTableName + " Table/Page " + pageIndex + ".ser";
+			String pagePath = "data/" + strTableName + " Table/Page " + pageIndex + ".ser";
 			FileInputStream fileIn = new FileInputStream(pagePath);
 			in = new ObjectInputStream(fileIn);
 			results = (ArrayList<Tuple>)in.readObject();
@@ -775,7 +790,7 @@ public class DBApp
 		ObjectInputStream in;
 		ArrayList<Tuple> results = null;
 		try {
-			String pagePath = "src/DB2App/" + strTableName + " Table/Page " + index + ".ser";
+			String pagePath = "data/" + strTableName + " Table/Page " + index + ".ser";
 			//System.out.println(index + "fady");
 			FileInputStream fileIn = new FileInputStream(pagePath);
 			in = new ObjectInputStream(fileIn);
@@ -936,7 +951,7 @@ public class DBApp
 //
 //			//locating the page in the table's folder
 //			FileOutputStream fileOut = new FileOutputStream(
-//					"src/DB2App/" + strTableName + " Table/Page " + pageID + ".ser");
+//					"data/" + strTableName + " Table/Page " + pageID + ".ser");
 //
 //			ObjectOutputStream out = new ObjectOutputStream(fileOut);
 //
@@ -950,7 +965,7 @@ public class DBApp
 //			//uncomment that to see the tuple's data deserialized
 //			//don't forget to uncomment the catch part as well, line 193
 //			
-//			 FileInputStream fileIn = new FileInputStream("src/DB2App/" +
+//			 FileInputStream fileIn = new FileInputStream("data/" +
 //			 strTableName + " Table/Page " + pageID + ".ser");
 //			 ObjectInputStream in = new ObjectInputStream(fileIn); Tuple tn = (Tuple)(in.readObject()); 
 //			 System.out.println(tn.toString());
@@ -1002,7 +1017,7 @@ public class DBApp
 		try
 		{
 			//writing the data to the csv file
-			FileWriter fw = new FileWriter("src/DB2App/metaData.csv", true);
+			FileWriter fw = new FileWriter("data/metaData.csv", true);
 			BufferedWriter bw = new BufferedWriter(fw);
 
 			PrintWriter out = new PrintWriter(bw);
@@ -1027,7 +1042,7 @@ public class DBApp
 		int keyIndex = 0;
 		int args = 0;
 		try {
-			BufferedReader br = new BufferedReader(new FileReader("src/DB2App/metaData.csv"));
+			BufferedReader br = new BufferedReader(new FileReader("data/metaData.csv"));
 			String line = br.readLine();
 			String key = null;
 			Hashtable<String, String> meta = new Hashtable<String, String>();
@@ -1096,7 +1111,7 @@ public class DBApp
 
 		//checking that the metadata file doesnnot contain anothertable with the same name
 		try {
-			BufferedReader br = new BufferedReader(new FileReader("src/DB2App/metaData.csv"));
+			BufferedReader br = new BufferedReader(new FileReader("data/metaData.csv"));
 			String line = br.readLine();
 			while (line != null)
 			{
