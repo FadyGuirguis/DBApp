@@ -158,7 +158,7 @@ public class DBAppTest {
 //
 //			htblColNameValue.clear();
 //			htblColNameValue.put("id", new Integer(780));
-//			htblColNameValue.put("name", new String("Maggie"));
+//			htblColNameValue.put("name ", new String("Maggie"));
 //			htblColNameValue.put("gpa", new Double(0.95));
 //			ourApp.insertIntoTable(strTableName, htblColNameValue);
 ////			
@@ -180,7 +180,7 @@ public class DBAppTest {
 			ArrayList<Tuple> results = null;
 			System.out.println("page" + i);
 			try {
-				String pagePath = "src/DB2App/Student Table/Page " + i + ".ser";
+				String pagePath = "data/Student Table/Page " + i + ".ser";
 				FileInputStream fileIn = new FileInputStream(pagePath);
 				in = new ObjectInputStream(fileIn);
 				results = (ArrayList<Tuple>)in.readObject();
