@@ -1,6 +1,7 @@
 package test;
 
 import java.awt.List;
+import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -190,8 +191,13 @@ public class DBAppTest {
 				FileInputStream fileIn = new FileInputStream(pagePath);
 				in = new ObjectInputStream(fileIn);
 				//results = (ArrayList<Tuple>)in.readObject();
-				while((temps = (String)in.readObject()) != null )
-					System.out.println(temps);
+				try{
+					while((temps = (String)in.readObject()) != null )
+						System.out.println(temps);
+				}
+				catch (EOFException e) {
+					
+				}
 
 			} catch (IOException e) {
 				e.printStackTrace();
