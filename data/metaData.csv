@@ -1,12 +1,12 @@
 Table Name, Column Name, Column Type, Key, Indexed
 
-Student, TouchDate, java.time.LocalDateTime, False, False 
-Student, gpa, java.lang.Double, False, False 
-Student, name, java.lang.String, False, False 
-Student, id, java.lang.Integer, True, False 
+Student, TouchDate, java.time.LocalDateTime, False, False
+Student, gpa, java.lang.Double, False, False
+Student, name, java.lang.String, False, True
+Student, id, java.lang.Integer, True, True
 
-Employee, TouchDate, java.time.LocalDateTime, False, False 
-Employee, name, java.lang.String, False, False 
-Employee, salary, java.lang.Double, False, False 
-Employee, id, java.lang.Integer, True, False 
+Employee, TouchDate, java.time.LocalDateTime, False, False
+Employee, name, java.lang.String, False, False
+Employee, salary, java.lang.Double, False, False
+Employee, id, java.lang.Integer, True, False
 

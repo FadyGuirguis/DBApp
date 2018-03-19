@@ -1,4 +1,5 @@
 package project;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.LinkedList;
 
@@ -13,6 +14,8 @@ public class Table
 	private Hashtable<String, String> htblColNameType;
 	//a linked list of the pages that hold the table's data
 	private LinkedList<Page> pages;
+	//
+	private ArrayList<String> indexedColumns;
 
 	//constructor
 	public Table(String strTableName, String strClusteringKeyColumn, Hashtable<String, String> htblColNameType)
@@ -22,6 +25,8 @@ public class Table
 		this.htblColNameType = htblColNameType;
 		//when the table is created it has no pages yet
 		this.pages = new LinkedList<Page>();
+		//when the table is created it has no indices yet
+		this.indexedColumns = new ArrayList<String>();
 	}
 
 	//getters and setters
@@ -59,7 +64,12 @@ public class Table
 	{
 		return pages;
 	}
-
+	
+	public ArrayList<String> getIndexedColumns()
+	{
+		return indexedColumns;
+	}
+	
 	public void setPages(LinkedList<Page> pages)
 	{
 		this.pages = pages;

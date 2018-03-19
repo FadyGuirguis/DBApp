@@ -3,7 +3,9 @@ package project;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
+
 import exceptions.DBAppException;
+import exceptions.DBColumnNotFound;
 import exceptions.DBInCorrectEntriesNumber;
 import exceptions.DBNameInUse;
 import exceptions.DBPrimaryKeyNotUnique;
@@ -12,6 +14,7 @@ import exceptions.DBRowNotFound;
 import exceptions.DBTableNotFound;
 import exceptions.DBTypeMismatch;
 import exceptions.DBUnsupportedType;
+
 import java.lang.String;
 import java.time.LocalDateTime;
 import java.io.BufferedReader;
@@ -26,8 +29,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.*;
 
 public class DBApp
@@ -35,7 +36,7 @@ public class DBApp
 	//the max number of allowed objects (tuples/rows) in a page
 	//we set it for an arbitrary small number for the sake of testing
 	private int maxObjectsPerPage;
-	
+	private int BRINSize;
 	//keeping track of all the tables created in our application
 	private LinkedList<Table> tablesInApp = new LinkedList<Table>();
 
@@ -48,6 +49,7 @@ public class DBApp
 			Properties props = new Properties();
 			props.load(fr);
 			this.maxObjectsPerPage = Integer.parseInt(props.getProperty("MaximumRowsCountinPage"));
+			this.BRINSize = Integer.parseInt(props.getProperty("BRINSize"));
 			
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
@@ -142,7 +144,7 @@ public class DBApp
 		return p;
 	}
 	
-	public void updateTable(String strTableName, String strKey, Hashtable<String,Object> htblColNameValue ) throws DBAppException
+	public void updateTable(String strTableName, String strKey, Hashtable<String,Object> htblColNameValue ) throws DBAppException, IOException
 	{
 		int index = checkDataInsertionExceptions(strTableName, htblColNameValue);
 		htblColNameValue.put("TouchDate", LocalDateTime.now());
@@ -217,11 +219,17 @@ public class DBApp
 						System.out.println("Could Not Create a Page!");
 					}
 				}
+				
+				ArrayList<String> temp = new ArrayList<String>();
+				for(String s: table.getIndexedColumns())
+					temp.add(s);
+				for(String s:temp)
+					createBRINIndex(strTableName,s);
 			}
 		}
 	}
 	
-	public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException
+	public void deleteFromTable(String strTableName, Hashtable<String,Object> htblColNameValue) throws DBAppException, IOException
 	{
 		int index = checkDataInsertionExceptions(strTableName, htblColNameValue);
 		Enumeration<Object> colValues = htblColNameValue.elements();
@@ -302,7 +310,11 @@ public class DBApp
 						}
 					}
 				}
-				
+				ArrayList<String> temp = new ArrayList<String>();
+				for(String s: table.getIndexedColumns())
+					temp.add(s);
+				for(String s:temp)
+					createBRINIndex(strTableName,s);
 			}
 		}
 
@@ -521,7 +533,7 @@ public class DBApp
 		
 	}
 
-	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException
+	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException, IOException
 	{
 		//Check for exceptions
 		int index = checkDataInsertionExceptions(strTableName, htblColNameValue);
@@ -659,6 +671,11 @@ public class DBApp
 						System.out.println("Could Not Create a Page!");
 					}
 				}
+				ArrayList<String> temp = new ArrayList<String>();
+				for(String s: table.getIndexedColumns())
+					temp.add(s);
+				for(String s:temp)
+					createBRINIndex(strTableName,s);
 			}
 		}		 
 				
@@ -862,7 +879,188 @@ public class DBApp
 
 	}
 	
+    public void createBRINIndex (String strTableName, String ColName) throws DBAppException, IOException {
+		
+		// check if the table name passed to the method is correct
+		//if correct get the table
+
+		boolean found = false;
+		Table table = null;
+		
+		for(Table t: tablesInApp) {
+			if(t.getStrTableName().equals(strTableName)) {
+				found = true;
+				table = t;
+				break;
+			}
+		}
+		
+		if(! found)
+			throw new DBTableNotFound(strTableName);
+		
+		
+		//check if the column name is correct
+		
+		found = false;
+		
+		if(! table.getHtblColNameType().containsKey(ColName))
+			throw new DBColumnNotFound(ColName);
+		
+		//get the order of the column in the table
+		
+		Set<String> key = table.getHtblColNameType().keySet();
+		int order = 0;
+		
+		for(String s: key) {
+			order++;
+			if(s.equals(ColName))
+				break;
+		}
+		order = key.size() - order + 1;
+		
+		//array lists to store values that will be used in the index
+		
+		ArrayList<String> BRIN = new ArrayList<String>();
+		ArrayList<String> Dense = new ArrayList<String>();
+		ArrayList<String> denseTemp = new ArrayList<String>();
+		
+		
+		for (int i = 1; i <= table.getPages().size(); i++)
+		{
+			ObjectInputStream in;
+			ArrayList<Tuple> results = null;
+			
+			// Read pages of the table
+			try {
+				String pagePath = "data/" + strTableName + " Table/Page " + i + ".ser";
+				FileInputStream fileIn = new FileInputStream(pagePath);
+				in = new ObjectInputStream(fileIn);
+				results = (ArrayList<Tuple>)in.readObject();
 	
+				if(table.getStrClusteringKeyColumn().equals(ColName)) 
+				{
+					//extract the required field from the first tuple in the page
+					String top = results.get(0).toString();
+					String bottom = results.get(results.size() - 1).toString();
+					int commaFirst = 0;
+					int commaLast = 0;
+					for(int j = 0; j < top.length(); j++) {
+						if(top.charAt(j) == ',') {
+							commaLast++;
+							if(commaLast == order)
+								top = top.substring(commaFirst, j).trim();
+							else
+								commaFirst = j + 1;
+						}
+					}
+					commaFirst = 0;
+					commaLast = 0;
+					//extract the required field from the last tuple in the page
+					for(int j = 0; j < bottom.length(); j++) {
+						if(bottom.charAt(j) == ',') {
+							commaLast++;
+							if(commaLast == order)
+								bottom = bottom.substring(commaFirst, j).trim();
+							else
+								commaFirst = j + 1;
+						}
+					}
+					BRIN.add(top); BRIN.add(bottom);
+				}
+				// non - clustering column
+				else 
+				{	
+					// extract the required field from all the tuples for the dense index
+					for(int j = 0; j < results.size(); j++) {
+						int commaFirst = 0;
+						int commaLast = 0;
+						String temp = results.get(j).toString();
+						for(int k = 0; k < temp.length(); k++) {
+							if(temp.charAt(k) == ',') {
+								commaLast++;
+								if(commaLast == order)
+									temp = temp.substring(commaFirst, k).trim();
+								else
+									commaFirst = k + 1;
+							}
+						}
+						//Dense holds all the records and dense temp holds only record by record
+						Dense.add(temp);
+						denseTemp.add(temp);
+					}
+					Collections.sort(denseTemp);
+					BRIN.add(denseTemp.get(0)); BRIN.add(denseTemp.get(denseTemp.size() - 1));
+					//clear the array to prepare it for the next record in the index
+					denseTemp.clear();
+				}
+				
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+		// number of pages of index according to config file
+		//divided by 2 as each record in BRIN holds two values min and max
+		double numberBRINIndexPages = Math.ceil(Math.ceil((BRIN.size()/2.0))/BRINSize);
+		int insert = 0;
+		int end = BRINSize;
+		// create index pages 
+		for(int j = 1; j <= numberBRINIndexPages; j++) {
+			FileWriter fw = new FileWriter("data/" + strTableName + " Table/" + ColName + " BRINIndex " + j +".ser", true);
+			FileOutputStream fileOut = new FileOutputStream(
+					"data/" + strTableName + " Table/" + ColName + " BRINIndex " + j +".ser");
+			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+			
+			/*if(! table.getStrClusteringKeyColumn().equals(ColName)) {
+				Collections.sort(Dense);
+				for(String s: Dense)
+					out.writeObject(s);
+			}
+			out.writeObject("BRIN Index:");*/
+			
+			//insert records in each page of the index
+			for(int i = insert; i < BRIN.size() && i < end * 2;i+=2)
+				out.writeObject(BRIN.get(i) + "-" + BRIN.get(i+1));
+			
+			out.close();
+			fileOut.close();
+			insert = end * 2;
+			end += end;
+		}
+		
+		// update the metaData to set indexed to true
+		File file = new File("data/metaData.csv");
+		File outfile = new File("data/test.csv");
+		PrintWriter b = new PrintWriter("data/test.csv", "UTF-8");
+		BufferedReader br = new BufferedReader(new FileReader(file));
+		String line;
+		String[] content = null;
+		while ((line = br.readLine()) != null) {
+			content = line.split(", ");
+			for(int i = 0; i < content.length; i++){
+				if(content[0].equals(strTableName)) {
+					if(content[i].equals(ColName)) {
+						content[i + 3] = "True";
+					}
+				}
+				
+				if(i == content.length - 1)
+					b.write(content[i]);
+				else
+					b.write(content[i] + ", ");
+			}
+			b.write(System.lineSeparator());
+		}
+		b.close();
+		br.close();
+		file.delete();
+		outfile.renameTo(new File("data/metaData.csv"));
+		table.getIndexedColumns().add(ColName);
+		
+		
+	}
 
 	//htblColNameType is a hashtable with key: column name (String), and value: column value (Object)
 	//eg. for <Key,Value> : <"id",375>
@@ -1010,7 +1208,7 @@ public class DBApp
 			{
 				meta += "False, ";
 			}
-			meta += "False ";
+			meta += "False";
 			meta += System.lineSeparator();
 
 		}

@@ -16,7 +16,7 @@ import project.Tuple;
 
 public class DBAppTest {
 	
-	public static void main(String[] args)
+	public static void main(String[] args) throws IOException
 	{
 		//creating the application and initializing it
 		DBApp ourApp = new DBApp();
@@ -29,17 +29,18 @@ public class DBAppTest {
 		try {
 			strTableName = "Student";
 			Hashtable<String, String> htblColNameType = new Hashtable<String, String>();
+			Hashtable<String, String> htblColNameType2 = new Hashtable<String, String>();
 			htblColNameType.put("id", "java.lang.Integer");
 			htblColNameType.put("name", "java.lang.String");
 			htblColNameType.put("gpa", "java.lang.Double");
 			ourApp.createTable(strTableName, "id", htblColNameType);
 			
 			String strTableName2 = "Employee";
-			htblColNameType.clear();
-			htblColNameType.put("id", "java.lang.Integer");
-			htblColNameType.put("name", "java.lang.String");
-			htblColNameType.put("salary", "java.lang.Double");
-			ourApp.createTable(strTableName2, "id", htblColNameType);
+			//htblColNameType.clear();
+			htblColNameType2.put("id", "java.lang.Integer");
+			htblColNameType2.put("name", "java.lang.String");
+			htblColNameType2.put("salary", "java.lang.Double");
+			ourApp.createTable(strTableName2, "id", htblColNameType2);
 			
 			Hashtable<String, Object> htblColNameValue = new Hashtable<String, Object>();
 			htblColNameValue.put("id", new Integer(4898));
@@ -143,11 +144,15 @@ public class DBAppTest {
 			htblColNameValue.put("gpa", new Double(0.95));
 			ourApp.insertIntoTable(strTableName, htblColNameValue);
 			
+			ourApp.createBRINIndex(strTableName,"name");
+			
 			htblColNameValue.clear();
 			htblColNameValue.put("id", new Integer(570));
 			htblColNameValue.put("name", new String("Monica Anis"));
 			htblColNameValue.put("gpa", new Double(0.95));
 			ourApp.updateTable(strTableName, "id", htblColNameValue);
+			
+			ourApp.createBRINIndex(strTableName,"id");
 			
 //			htblColNameValue.clear();
 //			htblColNameValue.put("id", new Integer(780));
@@ -174,17 +179,19 @@ public class DBAppTest {
 			System.out.println(e.getMessage());
 		}
 		
-		for (int i = 1; i <=5; i++)
+		for (int i = 1; i <=2; i++)
 		{
 			ObjectInputStream in;
 			ArrayList<Tuple> results = null;
+			String temps;
 			System.out.println("page" + i);
 			try {
-				String pagePath = "data/Student Table/Page " + i + ".ser";
+				String pagePath = "data/Student Table/name BRINIndex " + i + ".ser";
 				FileInputStream fileIn = new FileInputStream(pagePath);
 				in = new ObjectInputStream(fileIn);
-				results = (ArrayList<Tuple>)in.readObject();
-				System.out.println(results.toString());
+				//results = (ArrayList<Tuple>)in.readObject();
+				while((temps = (String)in.readObject()) != null )
+					System.out.println(temps);
 
 			} catch (IOException e) {
 				e.printStackTrace();
