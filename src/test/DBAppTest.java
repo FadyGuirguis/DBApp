@@ -12,12 +12,14 @@ import java.util.Hashtable;
 
 import exceptions.DBAppException;
 import exceptions.DBNameInUse;
+import project.Brin;
 import project.DBApp;
+import project.Dense;
 import project.Tuple;
 
 public class DBAppTest {
 	
-	public static void main(String[] args) throws IOException
+	public static void main(String[] args) throws IOException, ClassNotFoundException
 	{
 		//creating the application and initializing it
 		DBApp ourApp = new DBApp();
@@ -155,6 +157,10 @@ public class DBAppTest {
 			
 			ourApp.createBRINIndex(strTableName,"id");
 			
+			Object[] objarrValues = {"570","3092"}; 
+			String[] strarrOperators = {">=","<="};
+			ourApp.selectFromTable(strTableName, "id", objarrValues, strarrOperators);
+			
 //			htblColNameValue.clear();
 //			htblColNameValue.put("id", new Integer(780));
 //			htblColNameValue.put("name", new String("Maggie"));
@@ -180,24 +186,27 @@ public class DBAppTest {
 			System.out.println(e.getMessage());
 		}
 		
-		for (int i = 1; i <=2; i++)
+		for (int i = 1; i <=5; i++)
 		{
 			ObjectInputStream in;
-			ArrayList<Tuple> results = null;
-			String temps;
+			Brin results;
+			ArrayList<Tuple> result;
 			System.out.println("page" + i);
 			try {
-				String pagePath = "data/Student Table/name BRINIndex " + i + ".ser";
+				String pagePath = "data/Student Table/Page " + i + ".ser";
 				FileInputStream fileIn = new FileInputStream(pagePath);
 				in = new ObjectInputStream(fileIn);
-				//results = (ArrayList<Tuple>)in.readObject();
-				try{
-					while((temps = (String)in.readObject()) != null )
-						System.out.println(temps);
+				result = (ArrayList<Tuple>) in.readObject();
+				System.out.println(result.toString());
+			/*	try{
+					while((results = (Brin)in.readObject()) != null ) 
+						System.out.println(results.getMaximum());
 				}
 				catch (EOFException e) {
 					
-				}
+				}*/
+				
+				
 
 			} catch (IOException e) {
 				e.printStackTrace();

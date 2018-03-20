@@ -19,6 +19,7 @@ import java.lang.String;
 import java.time.LocalDateTime;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -37,6 +38,7 @@ public class DBApp
 	//we set it for an arbitrary small number for the sake of testing
 	private int maxObjectsPerPage;
 	private int BRINSize;
+	private int DenseSize;
 	//keeping track of all the tables created in our application
 	private LinkedList<Table> tablesInApp = new LinkedList<Table>();
 
@@ -50,6 +52,7 @@ public class DBApp
 			props.load(fr);
 			this.maxObjectsPerPage = Integer.parseInt(props.getProperty("MaximumRowsCountinPage"));
 			this.BRINSize = Integer.parseInt(props.getProperty("BRINSize"));
+			this.DenseSize = Integer.parseInt(props.getProperty("DenseSize"));
 			
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
@@ -716,8 +719,6 @@ public class DBApp
 		}
 	}
 	
-
-
 	private ArrayList<Tuple> insertIntoPage(String strTableName, int pageIndex, Tuple t, int clusteringKeyIndex) throws DBPrimaryKeyNotUnique {
 		ObjectInputStream in;
 		ArrayList<Tuple> results = null;
@@ -879,7 +880,7 @@ public class DBApp
 
 	}
 	
-    public void createBRINIndex (String strTableName, String ColName) throws DBAppException, IOException {
+    public void createBRINIndex (String strTableName, String strColName) throws DBAppException, IOException {
 		
 		// check if the table name passed to the method is correct
 		//if correct get the table
@@ -903,8 +904,8 @@ public class DBApp
 		
 		found = false;
 		
-		if(! table.getHtblColNameType().containsKey(ColName))
-			throw new DBColumnNotFound(ColName);
+		if(! table.getHtblColNameType().containsKey(strColName))
+			throw new DBColumnNotFound(strColName);
 		
 		//get the order of the column in the table
 		
@@ -913,7 +914,7 @@ public class DBApp
 		
 		for(String s: key) {
 			order++;
-			if(s.equals(ColName))
+			if(s.equals(strColName))
 				break;
 		}
 		order = key.size() - order + 1;
@@ -921,7 +922,7 @@ public class DBApp
 		//array lists to store values that will be used in the index
 		
 		ArrayList<String> BRIN = new ArrayList<String>();
-		ArrayList<String> Dense = new ArrayList<String>();
+		ArrayList<Dense> Dense = new ArrayList<Dense>();
 		ArrayList<String> denseTemp = new ArrayList<String>();
 		
 		
@@ -937,7 +938,7 @@ public class DBApp
 				in = new ObjectInputStream(fileIn);
 				results = (ArrayList<Tuple>)in.readObject();
 	
-				if(table.getStrClusteringKeyColumn().equals(ColName)) 
+				if(table.getStrClusteringKeyColumn().equals(strColName)) 
 				{
 					//extract the required field from the first tuple in the page
 					String top = results.get(0).toString();
@@ -985,13 +986,13 @@ public class DBApp
 							}
 						}
 						//Dense holds all the records and dense temp holds only record by record
-						Dense.add(temp);
-						denseTemp.add(temp);
+						Dense.add(new Dense(temp, results.get(j)));
+				//		denseTemp.add(temp);
 					}
-					Collections.sort(denseTemp);
-					BRIN.add(denseTemp.get(0)); BRIN.add(denseTemp.get(denseTemp.size() - 1));
+				//	Collections.sort(denseTemp);
+				//	BRIN.add(denseTemp.get(0)); BRIN.add(denseTemp.get(denseTemp.size() - 1));
 					//clear the array to prepare it for the next record in the index
-					denseTemp.clear();
+				//	denseTemp.clear();
 				}
 				
 
@@ -1001,33 +1002,79 @@ public class DBApp
 				e.printStackTrace();
 			}
 		}
-		// number of pages of index according to config file
-		//divided by 2 as each record in BRIN holds two values min and max
-		double numberBRINIndexPages = Math.ceil(Math.ceil((BRIN.size()/2.0))/BRINSize);
-		int insert = 0;
-		int end = BRINSize;
-		// create index pages 
-		for(int j = 1; j <= numberBRINIndexPages; j++) {
-			FileWriter fw = new FileWriter("data/" + strTableName + " Table/" + ColName + " BRINIndex " + j +".ser", true);
-			FileOutputStream fileOut = new FileOutputStream(
-					"data/" + strTableName + " Table/" + ColName + " BRINIndex " + j +".ser");
-			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+		
+		if(table.getStrClusteringKeyColumn().equals(strColName)) {
+			// number of pages of index according to config file
+			//divided by 2 as each record in BRIN holds two values min and max
+			double numberBRINIndexPages = Math.ceil(Math.ceil((BRIN.size()/2.0))/BRINSize);
+			int insert = 0;
+			int end = BRINSize;
 			
-			/*if(! table.getStrClusteringKeyColumn().equals(ColName)) {
-				Collections.sort(Dense);
-				for(String s: Dense)
-					out.writeObject(s);
+			// create index pages 
+			for(int j = 1; j <= numberBRINIndexPages; j++) {
+				FileWriter fw = new FileWriter("data/" + strTableName + " Table/" + strColName + " BRINIndex " + j +".ser", true);
+				FileOutputStream fileOut = new FileOutputStream(
+						"data/" + strTableName + " Table/" + strColName + " BRINIndex " + j +".ser");
+				ObjectOutputStream out = new ObjectOutputStream(fileOut);
+				
+				//insert records in each page of the index
+				for(int i = insert; i < BRIN.size() && i < end * 2; i+=2)
+					out.writeObject((new Brin(BRIN.get(i), BRIN.get(i + 1), (i / 2) + 1)));
+				
+				out.close();
+				fileOut.close();
+				insert = end * 2;
+				end += end;
 			}
-			out.writeObject("BRIN Index:");*/
+		}
+		else {
+			sortDense(Dense);
+			double numberDenseIndexPages = Math.ceil((Dense.size() * 1.0) / DenseSize);
+			int insert = 0;
+			int end = DenseSize;
 			
-			//insert records in each page of the index
-			for(int i = insert; i < BRIN.size() && i < end * 2;i+=2)
-				out.writeObject(BRIN.get(i) + "-" + BRIN.get(i+1));
+			for(int j = 1; j <= numberDenseIndexPages; j++) {
+				FileWriter fw = new FileWriter("data/" + strTableName + " Table/" + strColName + " DenseIndex " + j +".ser", true);
+				FileOutputStream fileOut = new FileOutputStream(
+						"data/" + strTableName + " Table/" + strColName + " DenseIndex " + j +".ser");
+				ObjectOutputStream out = new ObjectOutputStream(fileOut);
+				
+				//insert records in each page of the index
+				for(int i = insert; i < Dense.size() && i < end; i++)
+					out.writeObject(Dense.get(i));
+				
+				out.close();
+				fileOut.close();
+				insert = end;
+				end += end;
+			}
 			
-			out.close();
-			fileOut.close();
-			insert = end * 2;
-			end += end;
+			insert = 0;
+			end = DenseSize;
+			double numberBRINIndexPages = Math.ceil((numberDenseIndexPages * 1.0) / BRINSize);
+			
+			for(int j = 1; j <= numberBRINIndexPages; j++) {
+				
+				FileWriter fw = new FileWriter("data/" + strTableName + " Table/" + strColName + " BRINIndex " + j +".ser", true);
+				FileOutputStream fileOut = new FileOutputStream(
+						"data/" + strTableName + " Table/" + strColName + " BRINIndex " + j +".ser");
+				ObjectOutputStream out = new ObjectOutputStream(fileOut);
+				
+				//insert records in each page of the index
+				for(int i = 1; i <= BRINSize; i++) {
+					if(end <= Dense.size())
+						out.writeObject(new Brin(Dense.get(insert).getValue(), Dense.get(end-1).getValue(), i));
+					else {
+						out.writeObject(new Brin(Dense.get(insert).getValue(), Dense.get(Dense.size() - 1).getValue(), i));
+						break;
+					}
+					insert = end;
+					end += end;
+				}
+				
+				out.close();
+				fileOut.close();
+			}
 		}
 		
 		// update the metaData to set indexed to true
@@ -1041,7 +1088,7 @@ public class DBApp
 			content = line.split(", ");
 			for(int i = 0; i < content.length; i++){
 				if(content[0].equals(strTableName)) {
-					if(content[i].equals(ColName)) {
+					if(content[i].equals(strColName)) {
 						content[i + 3] = "True";
 					}
 				}
@@ -1057,11 +1104,130 @@ public class DBApp
 		br.close();
 		file.delete();
 		outfile.renameTo(new File("data/metaData.csv"));
-		table.getIndexedColumns().add(ColName);
+		table.getIndexedColumns().add(strColName);
 		
 		
 	}
-
+    
+    private void sortDense (ArrayList<Dense> dense) {
+    	ArrayList<String> temp = new ArrayList<String> ();
+    	ArrayList<Dense> temp2 = new ArrayList<Dense> ();
+    	
+    	for(Dense d: dense)
+    		temp2.add(d);
+    	
+    	for(Dense d: dense)
+    		temp.add(d.getValue());
+    	Collections.sort(temp);
+    	
+    	dense.clear();
+    	
+    	int k = 0;
+    	for(int i = 0; i < temp2.size(); i++) {
+    		for(int j = 0; j < temp2.size(); j++) {
+    			if(temp2.get(j).getValue().equals(temp.get(k))) {
+    				dense.add(temp2.get(j));
+    				break;
+    			}
+    		}
+    		k++;
+    	}
+    }
+    
+    public void selectFromTable(String strTableName, String strColName, 
+    		Object[] objarrValues, String[] strarrOperators) throws DBAppException, IOException, ClassNotFoundException{
+    	// check if the table name passed to the method is correct
+    			//if correct get the table
+    	
+    			boolean found = false;
+    			Table table = null;
+    			
+    			for(Table t: tablesInApp) {
+    				if(t.getStrTableName().equals(strTableName)) {
+    					found = true;
+    					table = t;
+    					break;
+    				}
+    			}
+    			
+    			if(! found)
+    				throw new DBTableNotFound(strTableName);
+    			
+    			
+    			//check if the column name is correct
+    			
+    			found = false;
+    			
+    			if(! table.getHtblColNameType().containsKey(strColName))
+    				throw new DBColumnNotFound(strColName);
+    			
+    			//check if there is index for the column
+    			if(! table.getIndexedColumns().contains(strColName))
+    				createBRINIndex(strTableName, strColName);
+    			
+    			//get the order of the column in the table
+    			
+    			Set<String> key = table.getHtblColNameType().keySet();
+    			int order = 0;
+    			
+    			for(String s: key) {
+    				order++;
+    				if(s.equals(strColName))
+    					break;
+    			}
+    			order = key.size() - order + 1;
+    			
+    			double numberBRINIndexPages = Math.ceil((table.getPages().size() * 1.0)/BRINSize);
+    			for(int i = 1; i <= numberBRINIndexPages ; i++) {
+    				String pagePath = "data/" + strTableName + " Table/" + strColName + " BRINIndex " + i + ".ser";
+    				FileInputStream fileIn = new FileInputStream(pagePath);
+    				ObjectInputStream in = new ObjectInputStream(fileIn);
+    				Brin results;
+    				try{
+    					while((results = (Brin)in.readObject()) != null ) {
+    						if(accessPage(results, objarrValues, strarrOperators)) {
+    							System.out.println(1);
+    							String pagePath2 = "data/" + strTableName + " Table/Page " + results.getPageID() + ".ser";
+    		    				FileInputStream fileIn2 = new FileInputStream(pagePath2);
+    		    				ObjectInputStream in2 = new ObjectInputStream(fileIn2);
+    		    				ArrayList<Tuple> pageTuples = (ArrayList<Tuple>) in2.readObject();
+    		    				for(Tuple tuple: pageTuples)
+    		    					if(inRange(tuple, order, objarrValues, strarrOperators))
+    		    						System.out.println(tuple.toString());
+    		    					
+    						}
+    					}
+    				}
+    				catch (EOFException e) {
+    					
+    				}
+    			}
+    }
+    
+    private boolean accessPage (Brin brin, Object[] objarrvalues, String[] strarrOperators) {
+    	switch(strarrOperators[0]) 
+    	{
+    		case ">": 
+    			if(strarrOperators[1].equals("<"))
+    				if(((String) objarrvalues[0]).compareTo(brin.getMinimum()) > 0 ||
+    						((String) objarrvalues[1]).compareTo(brin.getMaximum()) < 0)
+    					return true;
+    				else
+    					if(((String) objarrvalues[0]).compareTo(brin.getMinimum()) > 0 ||
+        						((String) objarrvalues[1]).compareTo(brin.getMaximum()) <= 0)
+    						return true;
+    		case ">=":
+    			if(strarrOperators[1].equals("<"))
+    				if(((String) objarrvalues[0]).compareTo(brin.getMinimum()) >= 0 ||
+    						((String) objarrvalues[1]).compareTo(brin.getMaximum()) < 0)
+    					return true;
+    				else
+    					if(((String) objarrvalues[0]).compareTo(brin.getMinimum()) >= 0 ||
+        						((String) objarrvalues[1]).compareTo(brin.getMaximum()) <= 0)
+    						return true;
+    	}
+    	return false;
+    }
 	//htblColNameType is a hashtable with key: column name (String), and value: column value (Object)
 	//eg. for <Key,Value> : <"id",375>
 //	public void insertIntoTable(String strTableName, Hashtable<String, Object> htblColNameValue) throws DBAppException
@@ -1182,7 +1348,47 @@ public class DBApp
 
 
 
-	public static void addMetaData(String strTableName, String strClusteringKeyColumn,
+	
+    private boolean inRange(Tuple tuple, int order, Object[] objarrvalues, String[] strarrOperators) {
+    	int commaFirst = 0;
+		int commaLast = 0;
+    	String temp = tuple.toString();
+		for(int k = 0; k < temp.length(); k++) {
+			if(temp.charAt(k) == ',') {
+				commaLast++;
+				if(commaLast == order)
+					temp = temp.substring(commaFirst, k).trim();
+				else
+					commaFirst = k + 1;
+			}
+		}
+		
+		switch(strarrOperators[0]) 
+    	{
+    		case ">": 
+    			if(strarrOperators[1].equals("<"))
+    				if(temp.compareTo(((String) objarrvalues[0])) > 0 &&
+    						temp.compareTo((String) objarrvalues[1]) < 0)
+    					return true;
+    				else
+    					if(temp.compareTo(((String) objarrvalues[0])) > 0 &&
+        						temp.compareTo((String) objarrvalues[1]) <= 0)
+        					return true;
+    		case ">=":
+    			if(strarrOperators[1].equals("<"))
+    				if(temp.compareTo(((String) objarrvalues[0])) >= 0 &&
+    						temp.compareTo((String) objarrvalues[1]) < 0)
+    					return true;
+    				else
+    					if(temp.compareTo(((String) objarrvalues[0])) >= 0 &&
+        						temp.compareTo((String) objarrvalues[1]) <= 0)
+        					return true;
+    	}
+		
+    	return false;
+    }
+    
+    public static void addMetaData(String strTableName, String strClusteringKeyColumn,
 			Hashtable<String, String> htblColNameType)
 	{
 		//the string that will hold the columns' data
