@@ -1186,14 +1186,18 @@ public class DBApp
     				try{
     					while((results = (Brin)in.readObject()) != null ) {
     						if(accessPage(results, objarrValues, strarrOperators)) {
-    							System.out.println(1);
+    							//System.out.println(1);
     							String pagePath2 = "data/" + strTableName + " Table/Page " + results.getPageID() + ".ser";
     		    				FileInputStream fileIn2 = new FileInputStream(pagePath2);
     		    				ObjectInputStream in2 = new ObjectInputStream(fileIn2);
     		    				ArrayList<Tuple> pageTuples = (ArrayList<Tuple>) in2.readObject();
-    		    				for(Tuple tuple: pageTuples)
-    		    					if(inRange(tuple, order, objarrValues, strarrOperators))
+    		    				//System.out.println(1);
+    		    				for(Tuple tuple: pageTuples) {
+    		    					//System.out.println(2);
+    		    					if(inRange(tuple, order, objarrValues, strarrOperators)) {
     		    						System.out.println(tuple.toString());
+    		    					}
+    		    				}
     		    					
     						}
     					}
@@ -1208,23 +1212,152 @@ public class DBApp
     	switch(strarrOperators[0]) 
     	{
     		case ">": 
-    			if(strarrOperators[1].equals("<"))
-    				if(((String) objarrvalues[0]).compareTo(brin.getMinimum()) > 0 ||
-    						((String) objarrvalues[1]).compareTo(brin.getMaximum()) < 0)
-    					return true;
-    				else
-    					if(((String) objarrvalues[0]).compareTo(brin.getMinimum()) > 0 ||
-        						((String) objarrvalues[1]).compareTo(brin.getMaximum()) <= 0)
+    			if(strarrOperators[1].equals("<")) {
+    				try {
+	    					if
+	    					(
+	    						(
+	    							(Integer.parseInt(((String) objarrvalues[0])) > Integer.parseInt(brin.getMinimum()))
+	    							&&
+	    							(Integer.parseInt(((String) objarrvalues[0])) < Integer.parseInt(brin.getMaximum()))
+	    						)
+	    						||
+	    						(
+	    							(Integer.parseInt(((String) objarrvalues[1])) > Integer.parseInt(brin.getMinimum()))
+	    							&&
+	    							(Integer.parseInt(((String) objarrvalues[1])) < Integer.parseInt(brin.getMaximum()))
+	    						)
+	    					)
+	    						return true;
+    				}
+    				catch (NumberFormatException e) {
+    						if
+    						(
+    							(
+    								(((String) objarrvalues[0]).compareTo(brin.getMinimum()) > 0)
+    								&&
+    								(((String) objarrvalues[0]).compareTo(brin.getMaximum()) < 0)
+    							)
+    							||
+    							(
+    								(((String) objarrvalues[1]).compareTo(brin.getMinimum()) > 0)
+    								&&
+    								(((String) objarrvalues[0]).compareTo(brin.getMaximum()) < 0)
+    							)
+    						)	
+	    						return true;
+    				}
+    			}
+    			else {
+    				try {
+    					if
+    					(
+    						(
+    							(Integer.parseInt(((String) objarrvalues[0])) > Integer.parseInt(brin.getMinimum()))
+    							&&
+    							(Integer.parseInt(((String) objarrvalues[0])) <= Integer.parseInt(brin.getMaximum()))
+    						)
+    						||
+    						(
+    							(Integer.parseInt(((String) objarrvalues[1])) > Integer.parseInt(brin.getMinimum()))
+    							&&
+    							(Integer.parseInt(((String) objarrvalues[1])) <= Integer.parseInt(brin.getMaximum()))
+    						)
+    					)
     						return true;
+    				}
+				catch (NumberFormatException e) {
+						if
+						(
+							(
+								(((String) objarrvalues[0]).compareTo(brin.getMinimum()) > 0)
+								&&
+								(((String) objarrvalues[0]).compareTo(brin.getMaximum()) <= 0)
+							)
+							||
+							(
+								(((String) objarrvalues[1]).compareTo(brin.getMinimum()) > 0)
+								&&
+								(((String) objarrvalues[1]).compareTo(brin.getMaximum()) <= 0)
+							)
+						)	
+    						return true;
+					}
+    			}
+    			
     		case ">=":
-    			if(strarrOperators[1].equals("<"))
-    				if(((String) objarrvalues[0]).compareTo(brin.getMinimum()) >= 0 ||
-    						((String) objarrvalues[1]).compareTo(brin.getMaximum()) < 0)
-    					return true;
-    				else
-    					if(((String) objarrvalues[0]).compareTo(brin.getMinimum()) >= 0 ||
-        						((String) objarrvalues[1]).compareTo(brin.getMaximum()) <= 0)
+    			if(strarrOperators[1].equals("<")) {
+    				try {
+    					if
+    					(
+    						(
+    							(Integer.parseInt(((String) objarrvalues[0])) >= Integer.parseInt(brin.getMinimum()))
+    							&&
+    							(Integer.parseInt(((String) objarrvalues[0])) < Integer.parseInt(brin.getMaximum()))
+    						)
+    						||
+    						(
+    							(Integer.parseInt(((String) objarrvalues[1])) >= Integer.parseInt(brin.getMinimum()))
+    							&&
+    							(Integer.parseInt(((String) objarrvalues[1])) < Integer.parseInt(brin.getMaximum()))
+    						)
+    					)
     						return true;
+    				}
+				catch (NumberFormatException e) {
+						if
+						(
+							(
+								(((String) objarrvalues[0]).compareTo(brin.getMinimum()) >= 0)
+								&&
+								(((String) objarrvalues[0]).compareTo(brin.getMaximum()) < 0)
+							)
+							||
+							(
+								(((String) objarrvalues[1]).compareTo(brin.getMinimum()) >= 0)
+								&&
+								(((String) objarrvalues[1]).compareTo(brin.getMaximum()) < 0)
+							)
+						)	
+    						return true;
+					}
+    			}
+    			else {
+    				try {
+    					if
+    					(
+    						(
+    							(Integer.parseInt(((String) objarrvalues[0])) >= Integer.parseInt(brin.getMinimum()))
+    							&&
+    							(Integer.parseInt(((String) objarrvalues[0])) <= Integer.parseInt(brin.getMaximum()))
+    						)
+    						||
+    						(
+    							(Integer.parseInt(((String) objarrvalues[1])) >= Integer.parseInt(brin.getMinimum()))
+    							&&
+    							(Integer.parseInt(((String) objarrvalues[1])) <= Integer.parseInt(brin.getMaximum()))
+    						)
+    					)
+    						return true;
+    				}
+				catch (NumberFormatException e) {
+						if
+						(
+							(
+								(((String) objarrvalues[0]).compareTo(brin.getMinimum()) >= 0)
+								&&
+								(((String) objarrvalues[0]).compareTo(brin.getMaximum()) <= 0)
+							)
+							||
+							(
+								(((String) objarrvalues[1]).compareTo(brin.getMinimum()) >= 0)
+								&&
+								(((String) objarrvalues[1]).compareTo(brin.getMaximum()) <= 0)
+							)
+						)	
+    						return true;
+					}
+    			}
     	}
     	return false;
     }
@@ -1366,23 +1499,88 @@ public class DBApp
 		switch(strarrOperators[0]) 
     	{
     		case ">": 
-    			if(strarrOperators[1].equals("<"))
-    				if(temp.compareTo(((String) objarrvalues[0])) > 0 &&
-    						temp.compareTo((String) objarrvalues[1]) < 0)
-    					return true;
-    				else
-    					if(temp.compareTo(((String) objarrvalues[0])) > 0 &&
-        						temp.compareTo((String) objarrvalues[1]) <= 0)
-        					return true;
+    			if(strarrOperators[1].equals("<")) {
+    				try {
+	    				if
+	    				(
+	    					(Integer.parseInt(temp) > Integer.parseInt(((String) objarrvalues[0])))
+	    					&&
+	    					(Integer.parseInt(temp) < Integer.parseInt(((String) objarrvalues[1])))
+	    				)
+	    					return true;
+    				}
+    				catch(NumberFormatException e) {
+    					if
+    					(
+    						(temp.compareTo(((String) objarrvalues[0])) > 0)
+    						&&
+    						(temp.compareTo(((String) objarrvalues[1])) < 0)
+    					)
+    						return true;
+    				}
+    			}
+    			else {
+    				try {
+	    				if
+	    				(
+	    					(Integer.parseInt(temp) > Integer.parseInt(((String) objarrvalues[0])))
+	    					&&
+	    					(Integer.parseInt(temp) <= Integer.parseInt(((String) objarrvalues[1])))
+	    				)
+	    					return true;
+    				}
+    				catch(NumberFormatException e) {
+    					if
+    					(
+    						(temp.compareTo(((String) objarrvalues[0])) > 0)
+    						&&
+    						(temp.compareTo(((String) objarrvalues[1])) <= 0)
+    					)
+    						return true;
+    				}
+    			}
+    			
     		case ">=":
-    			if(strarrOperators[1].equals("<"))
-    				if(temp.compareTo(((String) objarrvalues[0])) >= 0 &&
-    						temp.compareTo((String) objarrvalues[1]) < 0)
-    					return true;
-    				else
-    					if(temp.compareTo(((String) objarrvalues[0])) >= 0 &&
-        						temp.compareTo((String) objarrvalues[1]) <= 0)
-        					return true;
+    			if(strarrOperators[1].equals("<")) {
+    				try {
+	    				if
+	    				(
+	    					(Integer.parseInt(temp) >= Integer.parseInt(((String) objarrvalues[0])))
+	    					&&
+	    					(Integer.parseInt(temp) < Integer.parseInt(((String) objarrvalues[1])))
+	    				)
+	    					return true;
+    				}
+    				catch(NumberFormatException e) {
+    					if
+    					(
+    						(temp.compareTo(((String) objarrvalues[0])) >= 0)
+    						&&
+    						(temp.compareTo(((String) objarrvalues[1])) < 0)
+    					)
+    						return true;
+    				}
+    			}
+    			else {
+    				try {
+	    				if
+	    				(
+	    					(Integer.parseInt(temp) >= Integer.parseInt(((String) objarrvalues[0])))
+	    					&&
+	    					(Integer.parseInt(temp) <= Integer.parseInt(((String) objarrvalues[1])))
+	    				)
+	    					return true;
+    				}
+    				catch(NumberFormatException e) {
+    					if
+    					(
+    						(temp.compareTo(((String) objarrvalues[0])) >= 0)
+    						&&
+    						(temp.compareTo(((String) objarrvalues[1])) <= 0)
+    					)
+    						return true;
+    				}
+    			}
     	}
 		
     	return false;

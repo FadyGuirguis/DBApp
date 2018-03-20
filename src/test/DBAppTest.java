@@ -157,10 +157,9 @@ public class DBAppTest {
 			
 			ourApp.createBRINIndex(strTableName,"id");
 			
-			Object[] objarrValues = {"570","3092"}; 
-			String[] strarrOperators = {">=","<="};
-			ourApp.selectFromTable(strTableName, "id", objarrValues, strarrOperators);
-			
+			Object[] objarrValues = {"780","3600"}; 
+			String[] strarrOperators = {">","<="};
+			//ourApp.selectFromTable(strTableName, "id", objarrValues, strarrOperators);
 //			htblColNameValue.clear();
 //			htblColNameValue.put("id", new Integer(780));
 //			htblColNameValue.put("name", new String("Maggie"));
